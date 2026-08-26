@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    font-family: "Inter", sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: "Manrope", sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar to match the "Kinetic Logic" system */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #dadada;
+    border-radius: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #c5c6c8;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.live-pulse {
+  position: relative;
+}
+
+.live-pulse::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: inherit;
+  border-radius: 50%;
+  z-index: -1;
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+/* Subtle one-off flash for a numeric value that just changed (e.g. Train
+   Details' Primary ETA reacting to a simulation tick). Not a redesign —
+   just a brief highlight, same layout before/during/after. */
+@keyframes eta-flash {
+  0% {
+    color: #0052cc;
+    transform: scale(1.08);
+  }
+  60% {
+    color: #0052cc;
+  }
+  100% {
+    color: inherit;
+    transform: scale(1);
+  }
+}
+
+.eta-flash {
+  display: inline-block;
+  animation: eta-flash 0.7s ease-out;
+}
