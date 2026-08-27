@@ -9,6 +9,8 @@ import {
   TICK_INTERVAL_MS,
   type EngineState,
 } from "@/simulation/trainSimulationEngine";
+import { alertService } from "@/services/alertService";
+import { useNetworkStore } from "@/store/useNetworkStore";
 
 interface SimulationStoreState {
   isRunning: boolean;
@@ -55,8 +57,34 @@ export const useSimulationStore = create<SimulationStoreState>((set, get) => ({
     if (intervalHandle) return;
     set({ isRunning: true });
     intervalHandle = setInterval(() => {
+      const previousTrain = get().train;
       const nextEngineState = stepEngine(get().engineState);
       const derived = deriveLiveData(nextEngineState, get().etaHistory);
+
+      // Real state-transition-driven alerts — see alertService.evaluate.
+      // Only fires when delay/ETA genuinely crossed a threshold this tick.
+      const newAlerts = alertService.evaluate({
+        trainId: derived.train.id,
+        trainName: derived.train.name,
+        previous: {
+          delayMinutes: previousTrain.delayMinutes,
+          delayStatus: previousTrain.delayStatus,
+          predictedEta: previousTrain.predictedEta,
+          currentSpeedKmh: previousTrain.currentSpeedKmh,
+          currentStationName: previousTrain.currentStationName,
+        },
+        current: {
+          delayMinutes: derived.train.delayMinutes,
+          delayStatus: derived.train.delayStatus,
+          predictedEta: derived.train.predictedEta,
+          currentSpeedKmh: derived.train.currentSpeedKmh,
+          currentStationName: derived.train.currentStationName,
+        },
+      });
+      if (newAlerts.length > 0) {
+        useNetworkStore.getState().prependAlerts(newAlerts);
+      }
+
       set({
         engineState: nextEngineState,
         train: derived.train,

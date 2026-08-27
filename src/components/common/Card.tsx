@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -8,11 +9,14 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {}
  * DESIGN.md spec: pure white surface, 1px outline-variant border, 8px
  * radius, very soft diffused shadow. Compose with CardHeader/CardContent
  * for the standard "title + divider + body" pattern seen throughout the
- * Stitch screens.
+ * Stitch screens. Forwards its ref to the underlying div — needed by
+ * anything that wants to scroll a card into view or measure it (e.g.
+ * Delay Intelligence's "focus this section on the map" interaction).
  */
-export function Card({ className, ...props }: CardProps) {
+export const Card = forwardRef<HTMLDivElement, CardProps>(function Card({ className, ...props }, ref) {
   return (
     <div
+      ref={ref}
       className={cn(
         "flex flex-col overflow-hidden rounded-lg border border-outline-variant/50 bg-surface-container-lowest shadow-card",
         className,
@@ -20,7 +24,7 @@ export function Card({ className, ...props }: CardProps) {
       {...props}
     />
   );
-}
+});
 
 export interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {
   title: ReactNode;

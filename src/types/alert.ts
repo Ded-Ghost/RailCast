@@ -1,6 +1,6 @@
 export type AlertSeverity = "critical" | "warning" | "info" | "success";
 
-export type AlertCategory = "critical" | "delay" | "eta-change" | "recovery";
+export type AlertCategory = "critical" | "delay" | "eta-change" | "recovery" | "data-quality";
 
 export interface AlertItem {
   id: string;

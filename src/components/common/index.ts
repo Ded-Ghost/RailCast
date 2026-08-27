@@ -1,6 +1,7 @@
 export * from "./Button";
 export * from "./Card";
 export * from "./StatusBadge";
+export * from "./SectionStatusBadge";
 export * from "./LiveIndicator";
 export * from "./MetricCard";
 export * from "./Skeleton";

@@ -1,6 +1,7 @@
 import {
   delayCauseBreakdown,
   delayIntelligenceSummary,
+  delayTrend,
   networkSummary,
   routeSections,
   stations,
@@ -27,5 +28,10 @@ export const networkService = {
 
   async getRouteSections() {
     return resolveAfter(routeSections);
+  },
+
+  /** Network-average delay over the day, actual vs. predicted — Delay Intelligence's trend chart. */
+  async getDelayTrend() {
+    return resolveAfter(delayTrend);
   },
 };

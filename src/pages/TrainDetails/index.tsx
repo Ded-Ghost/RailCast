@@ -19,7 +19,7 @@ import {
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Card, CardHeader, CardContent } from "@/components/common/Card";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { LiveIndicator } from "@/components/common/LiveIndicator";
+import { DataSourceBadge } from "@/components/common/LiveIndicator";
 import { EmptyState } from "@/components/common/EmptyState";
 import { CardSkeleton } from "@/components/common/Skeleton";
 import { RouteIntelligence, type RouteIntelligenceStop } from "@/components/map/RouteIntelligence";
@@ -30,6 +30,7 @@ import { useStations } from "@/hooks/useStations";
 import { useSimulationStore } from "@/store/useSimulationStore";
 import { useElapsedSeconds } from "@/hooks/useElapsedSeconds";
 import { useValueChangeFlash } from "@/hooks/useValueChangeFlash";
+import { useLiveTrainFeed } from "@/hooks/useLiveTrainFeed";
 import { getStatusVisual } from "@/lib/status";
 import { formatDelay } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -48,6 +49,14 @@ export default function TrainDetails() {
   const lastUpdatedAt = useSimulationStore((state) => state.lastUpdatedAt);
   const elapsedSeconds = useElapsedSeconds(lastUpdatedAt);
   const etaFlash = useValueChangeFlash(train?.predictedEta ?? "");
+
+  // Attempts a REAL live lookup for any train that ISN'T the scripted demo
+  // — honestly reports "offline"/"unavailable" via the hook's status
+  // until a real backend + provider key exist (see
+  // hooks/useLiveTrainFeed.ts). Never used for the demo train itself,
+  // which has its own dedicated simulated feed.
+  const isDemoTrainId = id === PRIMARY_DEMO_TRAIN_ID;
+  const liveFeed = useLiveTrainFeed(isDemoTrainId ? null : id ?? null);
 
   if (isLoadingTrain) {
     return (
@@ -79,7 +88,7 @@ export default function TrainDetails() {
     );
   }
 
-  const isLiveDemo = train.id === PRIMARY_DEMO_TRAIN_ID;
+  const isLiveDemo = isDemoTrainId;
   const statusVisual = getStatusVisual(train.delayStatus);
   const stationNameByCode = new Map((stations ?? []).map((station) => [station.code, station.name]));
   const enrichedStops: RouteIntelligenceStop[] = (routeProgress?.stops ?? []).map((stop) => ({
@@ -105,12 +114,14 @@ export default function TrainDetails() {
               {train.id}
             </span>
             <h1 className="font-display text-headline-md text-on-background">{train.name}</h1>
-            <LiveIndicator />
-            {isLiveDemo && (
-              <span className="text-body-sm text-on-surface-variant">
-                Updated {elapsedSeconds}s ago
-              </span>
-            )}
+            <DataSourceBadge
+              status={isLiveDemo ? "demo" : liveFeed.status}
+              detail={
+                isLiveDemo
+                  ? `Scripted for demonstration — updated ${elapsedSeconds}s ago`
+                  : liveFeed.message ?? "No live feed connected for this train"
+              }
+            />
           </div>
           <p className="flex items-center gap-2 text-body-md text-on-surface-variant">
             {train.originName}

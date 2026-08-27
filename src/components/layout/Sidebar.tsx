@@ -1,7 +1,7 @@
 import { Train, X } from "lucide-react";
 import { NavItem } from "@/components/navigation/NavItem";
 import { primaryNavEntries, secondaryNavEntries } from "@/components/navigation/navConfig";
-import { LiveIndicator } from "@/components/common/LiveIndicator";
+import { DataSourceBadge } from "@/components/common/LiveIndicator";
 import { useUIStore } from "@/store/useUIStore";
 import { cn } from "@/lib/cn";
 
@@ -60,7 +60,7 @@ export function Sidebar() {
         </div>
 
         <div className="px-3">
-          <LiveIndicator variant="button" />
+          <DataSourceBadge status="demo" variant="button" label="Demo Network" />
         </div>
 
         <nav className="mt-4 flex flex-1 flex-col gap-1 overflow-y-auto px-3 scrollbar-thin">

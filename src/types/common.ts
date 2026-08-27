@@ -8,6 +8,14 @@ export type DelayStatus = "on-time" | "minor" | "significant" | "severe";
 /** Real-time / model-driven data as opposed to static/historical data. */
 export type LiveStatus = "live" | "predictive";
 
+/**
+ * Honest data-provenance state for any module that could be mistaken for
+ * live telemetry. Every place that shows something claiming to be
+ * current/real-time must pick one of these — never hardcode a "LIVE"
+ * label independent of this type. See components/common/LiveIndicator.tsx.
+ */
+export type DataSourceStatus = "live" | "demo" | "stale" | "offline" | "unavailable";
+
 export interface GeoPoint {
   lat: number;
   lng: number;

@@ -1,4 +1,4 @@
-import type { AlertSeverity, DelayStatus } from "@/types";
+import type { AlertSeverity, CongestionStatus, DelayStatus } from "@/types";
 
 /**
  * Single source of truth for how a `DelayStatus` maps to color tokens,
@@ -89,4 +89,50 @@ const ALERT_SEVERITY_VISUALS: Record<
 
 export function getAlertSeverityVisual(severity: AlertSeverity) {
   return ALERT_SEVERITY_VISUALS[severity];
+}
+
+/**
+ * Maps a track section's congestion tier onto the existing `DelayStatus`
+ * color system (healthy→on-time green, moderate→minor amber,
+ * congested→significant orange, critical→severe red), so section health
+ * on Route Monitor / Delay Intelligence's map never invents a second
+ * color language — it's the same one used for train delay everywhere else.
+ */
+const CONGESTION_TO_DELAY_STATUS: Record<CongestionStatus, DelayStatus> = {
+  healthy: "on-time",
+  moderate: "minor",
+  congested: "significant",
+  critical: "severe",
+};
+
+const CONGESTION_LABELS: Record<CongestionStatus, string> = {
+  healthy: "Healthy",
+  moderate: "Moderate",
+  congested: "Congested",
+  critical: "Critical",
+};
+
+export function getSectionStatusVisual(status: CongestionStatus): StatusVisual {
+  return { ...STATUS_VISUALS[CONGESTION_TO_DELAY_STATUS[status]], label: CONGESTION_LABELS[status] };
+}
+
+/**
+ * Raw hex values for the same status system, for contexts that can't use
+ * Tailwind classes — SVG/canvas-based libraries like Leaflet (Polyline
+ * `color`, Circle `fillColor`) and Recharts (`stroke`/`fill`). Keep this in
+ * sync with the `rail-*` / `error` tokens in tailwind.config.ts.
+ */
+const STATUS_HEX: Record<DelayStatus, string> = {
+  "on-time": "#0b8a00",
+  minor: "#d68800",
+  significant: "#c2540a",
+  severe: "#ba1a1a",
+};
+
+export function getStatusHexColor(status: DelayStatus): string {
+  return STATUS_HEX[status];
+}
+
+export function getSectionStatusHexColor(status: CongestionStatus): string {
+  return STATUS_HEX[CONGESTION_TO_DELAY_STATUS[status]];
 }

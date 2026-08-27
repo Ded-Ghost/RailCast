@@ -1,7 +1,29 @@
 import type { SimulationState } from "@/types";
 import { PRIMARY_DEMO_TRAIN_ID } from "./trains";
 
-export const defaultSimulationState: SimulationState = {
+/**
+ * Default scenario CONTROL values for Simulation Lab — matches the
+ * original Stitch mockup's pre-filled sliders (target speed 110, low
+ * congestion, normal dwell, clear weather, +5min injected delay).
+ *
+ * The *derived* fields on `SimulationState` (simulatedEta,
+ * etaImpactMinutes, bottleneckRiskLevel, stationForecast, elapsedLabel,
+ * nextStationCode) are intentionally NOT set here — they're computed by
+ * simulation/simulationLabEngine.ts from these controls, at store init and
+ * on every playback tick, so there's exactly one place that can produce
+ * them and they can never drift out of sync with the scenario logic.
+ */
+export const defaultSimulationControls: Pick<
+  SimulationState,
+  | "trainId"
+  | "targetSpeedKmh"
+  | "congestionLevel"
+  | "stationDwellTime"
+  | "weatherCondition"
+  | "delayInjectionMinutes"
+  | "isRunning"
+  | "playbackSpeed"
+> = {
   trainId: PRIMARY_DEMO_TRAIN_ID,
   targetSpeedKmh: 110,
   congestionLevel: "low",
@@ -10,9 +32,4 @@ export const defaultSimulationState: SimulationState = {
   delayInjectionMinutes: 5,
   isRunning: true,
   playbackSpeed: 1,
-  elapsedLabel: "T+00:15:30",
-  simulatedEta: "14:42",
-  nextStationCode: "KOTA",
-  etaImpactMinutes: 12,
-  bottleneckRiskLevel: 4,
 };

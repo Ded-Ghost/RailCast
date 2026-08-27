@@ -2,7 +2,7 @@ import { Share2, X } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader } from "@/components/common/Card";
-import { LiveIndicator } from "@/components/common/LiveIndicator";
+import { DataSourceBadge } from "@/components/common/LiveIndicator";
 import { EmptyState } from "@/components/common/EmptyState";
 import { CardSkeleton } from "@/components/common/Skeleton";
 import { NetworkMap } from "@/components/map/NetworkMap";
@@ -30,8 +30,8 @@ export default function LiveNetwork() {
     <PageContainer>
       <PageHeader
         title="Live Network"
-        description="Real-time positions, routes, and delay states across the network."
-        action={<LiveIndicator />}
+        description="Positions and delay states across the network — one train runs a scripted demo simulation; the rest are static reference data."
+        action={<DataSourceBadge status="demo" detail="Only train 12345 updates" />}
       />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:items-start">

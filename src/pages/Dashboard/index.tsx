@@ -15,7 +15,7 @@ import { Card, CardHeader, CardContent } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { MetricCard } from "@/components/common/MetricCard";
 import { MetricCardSkeleton } from "@/components/common/Skeleton";
-import { LiveIndicator } from "@/components/common/LiveIndicator";
+import { DataSourceBadge } from "@/components/common/LiveIndicator";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TrainStatusRow } from "@/components/train/TrainStatusRow";
 import { NetworkMap } from "@/components/map/NetworkMap";
@@ -91,8 +91,8 @@ export default function Dashboard() {
           <CardHeader
             title={
               <>
-                Live Network Snapshot
-                <LiveIndicator className="ml-2" />
+                Network Snapshot
+                <DataSourceBadge status="demo" className="ml-2" />
               </>
             }
             action={

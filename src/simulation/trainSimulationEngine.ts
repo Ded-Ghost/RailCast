@@ -7,6 +7,8 @@ import {
   getTrainById,
 } from "@/data";
 import { delayMinutesToStatus } from "@/lib/status";
+import { clamp, formatMinutesToTime, parseTimeToMinutes } from "@/lib/timeMath";
+import { etaService } from "@/services/etaService";
 import type { Prediction, RouteStopProgress, Train, TrainRouteProgress } from "@/types";
 
 /**
@@ -37,8 +39,8 @@ export const TICK_INTERVAL_MS = 5000;
 /** Simulated schedule-minutes each tick represents. */
 const TICK_SIM_MINUTES = 5;
 
-/** The route's nominal/scheduled running speed — the baseline delay is measured against. */
-const SCHEDULED_SPEED_KMH = 78;
+/** The route's nominal/scheduled running speed — the baseline delay is measured against. Exported for reuse by simulationLabEngine's what-if scenarios, which model the same corridor. */
+export const SCHEDULED_SPEED_KMH = 78;
 
 const HOURS_PER_TICK = TICK_SIM_MINUTES / 60;
 const SCHEDULED_DISTANCE_PER_TICK_KM = SCHEDULED_SPEED_KMH * HOURS_PER_TICK;
@@ -74,27 +76,7 @@ function getSpeedForTick(tickIndex: number): number {
   return FLAT_SPEED_PROFILE[tickIndex % FLAT_SPEED_PROFILE.length];
 }
 
-// --- Time-of-day helpers ("HH:MM" arithmetic, no Date object needed) ------
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function parseTimeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
-function formatMinutesToTime(totalMinutes: number): string {
-  const normalized = ((totalMinutes % 1440) + 1440) % 1440;
-  const hours = Math.floor(normalized / 60);
-  const minutes = Math.round(normalized % 60);
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-}
-
-function addMinutesToTime(time: string, minutesToAdd: number): string {
-  return formatMinutesToTime(parseTimeToMinutes(time) + minutesToAdd);
-}
+// --- Time-of-day helpers now live in lib/timeMath.ts (shared with simulationLabEngine) ---
 
 // --- Engine state ------------------------------------------------------------
 
@@ -191,11 +173,24 @@ export function deriveLiveData(state: EngineState, previousEtaHistory: EtaHistor
         }
       : baseTrain.position;
 
-  const predictedEta = addMinutesToTime(baseTrain.scheduledEta, roundedDelay);
-  const confidence = Math.round(clamp(98 - roundedDelay, 55, 98));
-  const spreadMinutes = Math.round(clamp((100 - confidence) / 3, 2, 8));
-  const predictedEtaRangeStart = addMinutesToTime(predictedEta, -spreadMinutes);
-  const predictedEtaRangeEnd = addMinutesToTime(predictedEta, spreadMinutes);
+  // The real baseline calculation lives in etaService — this engine only
+  // supplies the current state (delay so far, current position) and route
+  // data; it doesn't compute confidence/range/station-propagation itself.
+  const etaResult = etaService.calculateETA(
+    { scheduledEta: baseTrain.scheduledEta, currentDelayMinutes: roundedDelay },
+    {
+      stops: stops.map((stop) => ({
+        stationCode: stop.stationCode,
+        distanceFromOriginKm: stop.distanceFromOriginKm,
+        scheduledTime: stop.scheduledTime,
+      })),
+      currentStopIndex,
+    },
+  );
+  const predictedEta = etaResult.predictedArrivalTime;
+  const confidence = etaResult.confidence;
+  const predictedEtaRangeStart = etaResult.rangeStartTime;
+  const predictedEtaRangeEnd = etaResult.rangeEndTime;
 
   const train: Train = {
     ...baseTrain,
@@ -240,11 +235,10 @@ export function deriveLiveData(state: EngineState, previousEtaHistory: EtaHistor
   const routeProgress: TrainRouteProgress = {
     trainId: PRIMARY_DEMO_TRAIN_ID,
     stops: stops.map((stop, index): RouteStopProgress => {
-      if (index < currentStopIndex) {
-        return { ...stop, status: "passed", delayMinutes: 0, predictedTime: stop.scheduledTime };
-      }
-      const status: RouteStopProgress["status"] = index === currentStopIndex ? "current" : "upcoming";
-      return { ...stop, status, delayMinutes: roundedDelay, predictedTime: addMinutesToTime(stop.scheduledTime, roundedDelay) };
+      const estimate = etaResult.stationEstimates[index];
+      const status: RouteStopProgress["status"] =
+        index < currentStopIndex ? "passed" : index === currentStopIndex ? "current" : "upcoming";
+      return { ...stop, status, delayMinutes: estimate.delayMinutes, predictedTime: estimate.predictedTime };
     }),
   };
 
