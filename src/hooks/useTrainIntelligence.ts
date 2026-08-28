@@ -1,36 +1,37 @@
 import { useEffect, useState } from "react";
 import type { AsyncState, Prediction, TrainRouteProgress } from "@/types";
 import type { EtaHistoryPoint } from "@/data/etaHistory";
-import { PRIMARY_DEMO_TRAIN_ID } from "@/data";
 import { trainService } from "@/services/trainService";
-import { useSimulationStore } from "@/store/useSimulationStore";
+import { useTrainSimulation } from "@/store/useSimulationStore";
 
 /**
  * Confidence/range/contributing-factor breakdown for a train's predicted
- * ETA — powers "Why This ETA?". For the primary demo train this subscribes
- * to the live simulation instead of a one-shot fetch.
+ * ETA — powers "Why This ETA?".
+ *
+ * If the train is being simulated, returns live simulation data.
+ * Otherwise fetches prediction from the service.
  */
 export function usePrediction(trainId: string | undefined): AsyncState<Prediction> {
-  const isLiveDemo = trainId === PRIMARY_DEMO_TRAIN_ID;
-  const livePrediction = useSimulationStore((state) => state.prediction);
-  const startSimulation = useSimulationStore((state) => state.start);
-
+  const simulationData = useTrainSimulation(trainId ?? "");
   const [data, setData] = useState<Prediction | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isLiveDemo) {
-      startSimulation();
-      setData(null);
+    // If this train is being simulated, use simulation data
+    if (simulationData) {
+      setData(simulationData.prediction);
       setIsLoading(false);
+      setError(null);
       return;
     }
+
     if (!trainId) {
       setData(null);
       setIsLoading(false);
       return;
     }
+
     let cancelled = false;
     setIsLoading(true);
     trainService
@@ -46,42 +47,46 @@ export function usePrediction(trainId: string | undefined): AsyncState<Predictio
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
-  }, [trainId, isLiveDemo, startSimulation]);
+  }, [trainId, simulationData]);
 
-  if (isLiveDemo) {
-    return { data: livePrediction, isLoading: false, error: null };
+  if (simulationData) {
+    return { data: simulationData.prediction, isLoading: false, error: null };
   }
   return { data, isLoading, error };
 }
 
 /**
  * Station-by-station schedule/prediction breakdown — powers the route
- * intelligence visualization. Live for the primary demo train.
+ * intelligence visualization.
+ *
+ * If the train is being simulated, returns live simulation data.
+ * Otherwise fetches route progress from the service.
  */
 export function useRouteProgress(trainId: string | undefined): AsyncState<TrainRouteProgress> {
-  const isLiveDemo = trainId === PRIMARY_DEMO_TRAIN_ID;
-  const liveRouteProgress = useSimulationStore((state) => state.routeProgress);
-  const startSimulation = useSimulationStore((state) => state.start);
-
+  const simulationData = useTrainSimulation(trainId ?? "");
   const [data, setData] = useState<TrainRouteProgress | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isLiveDemo) {
-      startSimulation();
-      setData(null);
+    // If this train is being simulated, use simulation data
+    if (simulationData) {
+      setData(simulationData.routeProgress);
       setIsLoading(false);
+      setError(null);
       return;
     }
+
     if (!trainId) {
       setData(null);
       setIsLoading(false);
       return;
     }
+
     let cancelled = false;
     setIsLoading(true);
     trainService
@@ -97,42 +102,46 @@ export function useRouteProgress(trainId: string | undefined): AsyncState<TrainR
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
-  }, [trainId, isLiveDemo, startSimulation]);
+  }, [trainId, simulationData]);
 
-  if (isLiveDemo) {
-    return { data: liveRouteProgress, isLoading: false, error: null };
+  if (simulationData) {
+    return { data: simulationData.routeProgress, isLoading: false, error: null };
   }
   return { data, isLoading, error };
 }
 
 /**
- * Recent prediction drift — powers the ETA Evolution chart. Live for the
- * primary demo train: a new point is appended on every simulation tick.
+ * Recent prediction drift — powers the ETA Evolution chart.
+ *
+ * If the train is being simulated, returns live simulation data with
+ * a new point appended on every simulation tick.
+ * Otherwise fetches ETA history from the service.
  */
 export function useEtaHistory(trainId: string | undefined): AsyncState<EtaHistoryPoint[]> {
-  const isLiveDemo = trainId === PRIMARY_DEMO_TRAIN_ID;
-  const liveEtaHistory = useSimulationStore((state) => state.etaHistory);
-  const startSimulation = useSimulationStore((state) => state.start);
-
+  const simulationData = useTrainSimulation(trainId ?? "");
   const [data, setData] = useState<EtaHistoryPoint[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isLiveDemo) {
-      startSimulation();
-      setData(null);
+    // If this train is being simulated, use simulation data
+    if (simulationData) {
+      setData(simulationData.etaHistory);
       setIsLoading(false);
+      setError(null);
       return;
     }
+
     if (!trainId) {
       setData(null);
       setIsLoading(false);
       return;
     }
+
     let cancelled = false;
     setIsLoading(true);
     trainService
@@ -148,13 +157,14 @@ export function useEtaHistory(trainId: string | undefined): AsyncState<EtaHistor
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
-  }, [trainId, isLiveDemo, startSimulation]);
+  }, [trainId, simulationData]);
 
-  if (isLiveDemo) {
-    return { data: liveEtaHistory, isLoading: false, error: null };
+  if (simulationData) {
+    return { data: simulationData.etaHistory, isLoading: false, error: null };
   }
   return { data, isLoading, error };
 }

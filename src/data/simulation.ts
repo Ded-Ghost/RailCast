@@ -1,5 +1,4 @@
 import type { SimulationState } from "@/types";
-import { PRIMARY_DEMO_TRAIN_ID } from "./trains";
 
 /**
  * Default scenario CONTROL values for Simulation Lab — matches the
@@ -24,7 +23,10 @@ export const defaultSimulationControls: Pick<
   | "isRunning"
   | "playbackSpeed"
 > = {
-  trainId: PRIMARY_DEMO_TRAIN_ID,
+  // Seed train NUMBER only — Simulation Lab fetches this train's real route,
+  // timings and current delay on mount, exactly as it does for any number the
+  // user types afterwards. Nothing about this train is written down here.
+  trainId: "12301",
   targetSpeedKmh: 110,
   congestionLevel: "low",
   stationDwellTime: "normal",

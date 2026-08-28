@@ -1,14 +1,34 @@
-import { useState, type FormEvent, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
-import { Bell, CircleHelp, Grip, Menu, Search, UserRound } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Bell, CircleHelp, Menu, Radio, Search, Settings as SettingsIcon, UserRound } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useNetworkStore } from "@/store/useNetworkStore";
 import { cn } from "@/lib/cn";
 
+/** Closes an open popover on an outside click or Escape — shared by the Help and Account menus below. */
+function useDismissablePopover(onDismiss: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handlePointer(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) onDismiss();
+    }
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onDismiss();
+    }
+    document.addEventListener("mousedown", handlePointer);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handlePointer);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [onDismiss]);
+  return ref;
+}
+
 export interface TopHeaderProps {
   /**
    * Optional breadcrumb/title override for the left side of the header —
-   * used by pages like Train Details ("Train Search / 12345 Rajdhani
+   * used by pages like Train Details ("Train Search / 12301 Rajdhani
    * Express"). Falls back to the RailCast wordmark + global search.
    */
   breadcrumb?: ReactNode;
@@ -24,7 +44,12 @@ export function TopHeader({ breadcrumb }: TopHeaderProps) {
     (state) => state.alerts.filter((alert) => !alert.read).length,
   );
   const [query, setQuery] = useState("");
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const navigate = useNavigate();
+
+  const helpRef = useDismissablePopover(() => setIsHelpOpen(false));
+  const accountRef = useDismissablePopover(() => setIsAccountOpen(false));
 
   function handleSearchSubmit(event: FormEvent) {
     event.preventDefault();
@@ -82,27 +107,80 @@ export function TopHeader({ breadcrumb }: TopHeaderProps) {
             />
           )}
         </button>
-        <button
-          type="button"
-          className="rounded p-1.5 text-on-surface-variant transition-all hover:bg-surface-container-high hover:text-primary active:scale-90"
-          aria-label="Help"
-        >
-          <CircleHelp size={20} />
-        </button>
-        <button
-          type="button"
-          className="hidden rounded p-1.5 text-on-surface-variant transition-all hover:bg-surface-container-high hover:text-primary active:scale-90 sm:inline-flex"
-          aria-label="Apps"
-        >
-          <Grip size={20} />
-        </button>
-        <button
-          type="button"
-          className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border border-outline-variant bg-primary-container/10 text-primary"
-          aria-label="Account"
-        >
-          <UserRound size={18} />
-        </button>
+        <div ref={helpRef} className="relative">
+          <button
+            type="button"
+            className="rounded p-1.5 text-on-surface-variant transition-all hover:bg-surface-container-high hover:text-primary active:scale-90"
+            aria-label="Help"
+            aria-expanded={isHelpOpen}
+            onClick={() => {
+              setIsHelpOpen((v) => !v);
+              setIsAccountOpen(false);
+            }}
+          >
+            <CircleHelp size={20} />
+          </button>
+          {isHelpOpen && (
+            <div className="absolute right-0 top-full z-40 mt-2 w-72 rounded-lg border border-outline-variant bg-surface-container-lowest p-4 text-body-sm shadow-popover">
+              <p className="font-display text-headline-sm text-on-background">About RailCast</p>
+              <p className="mt-1.5 text-on-surface-variant">
+                Live train positions and ETAs join two public feeds: erail.in for published timetables and rappid.in
+                for running status. Delay predictions layer momentum, live weather and known structural bottlenecks
+                on top of that — see Train Details' prediction breakdown for the factors behind any one train.
+              </p>
+              <div className="mt-3 flex items-center gap-1.5 border-t border-outline-variant/40 pt-3 text-on-surface-variant">
+                <Radio size={14} />
+                <span>A live feed can go quiet without erroring — a stale-clock icon next to a delay means it's a last-known reading, not a fresh one.</span>
+              </div>
+              <Link
+                to="/settings"
+                onClick={() => setIsHelpOpen(false)}
+                className="mt-3 flex items-center gap-1.5 text-label-md font-semibold text-primary hover:text-primary-container"
+              >
+                <SettingsIcon size={14} /> Open System Settings
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <div ref={accountRef} className="relative ml-1">
+          <button
+            type="button"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-outline-variant bg-primary-container/10 text-primary"
+            aria-label="Account"
+            aria-expanded={isAccountOpen}
+            onClick={() => {
+              setIsAccountOpen((v) => !v);
+              setIsHelpOpen(false);
+            }}
+          >
+            <UserRound size={18} />
+          </button>
+          {isAccountOpen && (
+            <div className="absolute right-0 top-full z-40 mt-2 w-64 rounded-lg border border-outline-variant bg-surface-container-lowest p-4 text-body-sm shadow-popover">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full border border-outline-variant bg-primary-container/10 text-primary">
+                  <UserRound size={18} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-on-background">Guest Operator</span>
+                  <span className="text-body-sm text-on-surface-variant/80">Open demo session</span>
+                </div>
+              </div>
+              <p className="mt-3 border-t border-outline-variant/40 pt-3 text-on-surface-variant">
+                RailCast runs without an account system — every visitor sees the same live network view. Display
+                preferences (theme, units, alerts) are saved to this browser via Settings.
+              </p>
+              <Link
+                to="/settings"
+                onClick={() => setIsAccountOpen(false)}
+                className="mt-3 flex items-center gap-1.5 text-label-md font-semibold text-primary hover:text-primary-container"
+              >
+                <SettingsIcon size={14} /> Open System Settings
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

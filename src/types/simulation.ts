@@ -30,4 +30,24 @@ export interface SimulationState {
   etaImpactMinutes: number;
   bottleneckRiskLevel: number; // 1-5
   stationForecast: StationForecastPoint[];
+
+  // ── Real-train binding ──────────────────────────────────────────────────────
+  // Simulation Lab runs against a real train fetched from the backend, so the
+  // scenario can be compared against what that train is actually doing.
+
+  /** "12301 · Rajdhani Express" — resolved from the live lookup, not typed by the user. */
+  trainLabel: string;
+  /** Route origin and destination, for the map card heading. */
+  routeLabel: string;
+  /** The train's real delay right now, minutes. */
+  baselineDelayMinutes: number;
+  /** The train's real predicted arrival right now, "HH:MM". */
+  baselineEta: string;
+  /** Scenario minus reality: negative means the scenario beats today's actual running. */
+  deltaVsLiveMinutes: number;
+
+  /** True while a train's status and route are being fetched. */
+  isLoadingTrain: boolean;
+  /** Set when the entered train number could not be resolved. */
+  trainError: string | null;
 }

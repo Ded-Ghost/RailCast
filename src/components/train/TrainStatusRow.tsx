@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown, Clock } from "lucide-react";
 import type { Train } from "@/types";
 import { getStatusVisual } from "@/lib/status";
-import { formatDelayCompact } from "@/lib/format";
+import { formatDelayCompact, formatClockTime } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export interface TrainStatusRowProps {
   train: Train;
@@ -19,6 +20,7 @@ export function TrainStatusRow({ train }: TrainStatusRowProps) {
   const visual = getStatusVisual(train.delayStatus);
   const isOnTime = train.delayMinutes <= 0;
   const DeltaIcon = train.delayMinutes > 0 ? ArrowUp : ArrowDown;
+  const timeFormat = useSettingsStore((s) => s.timeFormat);
 
   return (
     <tr className="group relative cursor-pointer transition-colors hover:bg-surface-bright">
@@ -37,25 +39,32 @@ export function TrainStatusRow({ train }: TrainStatusRowProps) {
         </Link>
       </td>
       <td className="px-4 py-3 text-right">
-        {isOnTime ? (
-          <span className="text-body-sm font-bold text-rail-green">
-            {train.delayMinutes === 0 ? "On Time" : "Early"}
-          </span>
-        ) : (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-body-sm font-bold",
-              visual.textClass,
-              visual.bgSoftClass,
-            )}
-          >
-            <DeltaIcon size={12} />
-            {formatDelayCompact(train.delayMinutes)}
-          </span>
-        )}
+        <span className="inline-flex items-center justify-end gap-1">
+          {isOnTime ? (
+            <span className="text-body-sm font-bold text-rail-green">
+              {train.delayMinutes === 0 ? "On Time" : "Early"}
+            </span>
+          ) : (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-body-sm font-bold",
+                visual.textClass,
+                visual.bgSoftClass,
+              )}
+            >
+              <DeltaIcon size={12} />
+              {formatDelayCompact(train.delayMinutes)}
+            </span>
+          )}
+          {train.liveFeedStale && (
+            <span title="Live feed hasn't rechecked this train recently — reading may be outdated">
+              <Clock size={12} className="text-on-surface-variant/70" aria-hidden="true" />
+            </span>
+          )}
+        </span>
       </td>
       <td className="px-4 py-3 text-right font-body text-data-mono text-on-surface-variant">
-        {train.predictedEta}
+        {formatClockTime(train.predictedEta, timeFormat)}
       </td>
     </tr>
   );

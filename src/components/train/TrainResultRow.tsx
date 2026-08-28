@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
-import { Gauge, MapPin } from "lucide-react";
+import { Clock, Gauge, MapPin } from "lucide-react";
 import type { Train } from "@/types";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { formatDelay } from "@/lib/format";
+import { formatDelay, formatClockTime, formatSpeed } from "@/lib/format";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export interface TrainResultRowProps {
   train: Train;
@@ -15,6 +16,8 @@ export interface TrainResultRowProps {
  * and location" requirement.
  */
 export function TrainResultRow({ train }: TrainResultRowProps) {
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const timeFormat = useSettingsStore((s) => s.timeFormat);
   return (
     <Link
       to={`/trains/${train.id}`}
@@ -37,7 +40,7 @@ export function TrainResultRow({ train }: TrainResultRowProps) {
           </span>
           <span className="flex items-center gap-1">
             <Gauge size={13} />
-            {train.currentSpeedKmh} km/h
+            {formatSpeed(train.currentSpeedKmh, speedUnit)}
           </span>
         </div>
       </div>
@@ -48,10 +51,17 @@ export function TrainResultRow({ train }: TrainResultRowProps) {
             Predicted ETA
           </span>
           <span className="font-body text-headline-sm text-data-mono text-on-background">
-            {train.predictedEta}
+            {formatClockTime(train.predictedEta, timeFormat)}
           </span>
         </div>
-        <StatusBadge status={train.delayStatus} label={formatDelay(train.delayMinutes)} />
+        <span className="flex items-center gap-1.5">
+          <StatusBadge status={train.delayStatus} label={formatDelay(train.delayMinutes)} />
+          {train.liveFeedStale && (
+            <span title="Live feed hasn't rechecked this train recently — reading may be outdated">
+              <Clock size={13} className="text-on-surface-variant/70" aria-hidden="true" />
+            </span>
+          )}
+        </span>
       </div>
     </Link>
   );

@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { MapContainer as LeafletMapContainer, TileLayer, useMap } from "react-leaflet";
 import { Layers, Locate, Maximize } from "lucide-react";
 import "leaflet/dist/leaflet.css";
@@ -89,7 +89,17 @@ export function MapContainer({
         center={[center.lat, center.lng]}
         zoom={zoom}
         scrollWheelZoom={scrollWheelZoom}
-        className="h-full w-full"
+        // `absolute inset-0` on purpose, not `h-full w-full`: this element's
+        // parent (`wrapperRef`) is typically sized via Tailwind's `flex-1` +
+        // `min-h-[...]` (see every caller of MapContainer). A percentage
+        // height like `h-full` only resolves against a parent whose height
+        // was set with an explicit `height`, per the CSS spec — `min-height`
+        // does not count, even though it produces a real, non-zero box. The
+        // practical effect was Leaflet initializing against a 0×0 container:
+        // no tiles, no markers, just a blank rectangle. Absolute positioning
+        // with all four insets pinned to the parent's padding box sidesteps
+        // that rule entirely, since it isn't a percentage calculation.
+        className="absolute inset-0"
         style={{ background: "#eef1f5" }}
       >
         {TILE_LAYERS[mapType].map((layer) => (
@@ -97,6 +107,7 @@ export function MapContainer({
         ))}
         {children}
         <RecenterOnChange center={center} zoom={zoom} />
+        <InvalidateSizeOnResize />
 
         {/*
           Deliberately rendered as CHILDREN of LeafletMapContainer, not
@@ -149,6 +160,27 @@ function RecenterOnChange({ center, zoom }: { center: GeoPoint; zoom: number }) 
     lastCenterRef.current = key;
     map.setView([center.lat, center.lng], zoom, { animate: true });
   }
+  return null;
+}
+
+/**
+ * Leaflet caches the container size it measured at construction time and
+ * never re-checks it on its own. A resize the CSS fix above doesn't already
+ * cover — the fullscreen toggle, a sidebar collapsing, a card's layout
+ * settling after fonts load — leaves the map's tile grid stale even though
+ * the DOM box is now the right size. Watching the wrapper and nudging
+ * Leaflet whenever it changes keeps the two in sync for the map's whole
+ * lifetime, not just the first paint.
+ */
+function InvalidateSizeOnResize() {
+  const map = useMap();
+  useEffect(() => {
+    const container = map.getContainer();
+    const target = container.parentElement ?? container;
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [map]);
   return null;
 }
 

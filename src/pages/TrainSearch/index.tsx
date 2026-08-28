@@ -85,7 +85,7 @@ export default function TrainSearch() {
           type="text"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search by train number or name (e.g. 12345, Rajdhani)"
+          placeholder="Enter train number (e.g. 12301) or name (e.g. Rajdhani, Shatabdi)"
           className="h-14 w-full rounded-lg border border-outline-variant bg-surface-container-lowest pl-12 pr-12 text-body-lg text-on-surface shadow-card placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         />
         {initialQuery && (

@@ -19,78 +19,84 @@ const STOP_DOT_CLASS: Record<RouteStopProgress["status"], string> = {
 };
 
 /**
- * Proportional (distance-weighted, not evenly-spaced) line diagram of a
- * train's route: passed / current / upcoming stops, the live train marker,
- * and each stop's schedule vs. predicted time. This is the "route
- * intelligence visualization" for Train Details — a schematic line, not a
- * geographic map, since the point here is sequence + timing, not geography.
+ * Vertical station-by-station timeline: every stop on the route gets its own
+ * row — full name, code, scheduled vs. predicted time, delay — connected by
+ * a continuous line with the live train marker sitting between whichever two
+ * stops it's currently between.
+ *
+ * This replaces an earlier horizontal, distance-proportional layout that
+ * floated labels above/below a single line. That design could not show more
+ * than a handful of station names on any real long-distance route (some run
+ * to 60-100+ stops) without either overlapping text or thinning most labels
+ * down to unnamed dots — and unnamed dots read as clutter, not information,
+ * exactly the complaint that sank it. A vertical list has no such ceiling:
+ * each row gets a fixed height regardless of how many stops there are, so
+ * every station is always named, and the list simply scrolls.
  */
 export function RouteIntelligence({ stops, className }: RouteIntelligenceProps) {
   if (stops.length === 0) return null;
 
-  const totalDistance = stops[stops.length - 1].distanceFromOriginKm || 1;
-  const currentStop = stops.find((stop) => stop.status === "current") ?? stops[0];
-  const trainLeftPct = (currentStop.distanceFromOriginKm / totalDistance) * 100;
+  const currentIndex = stops.findIndex((stop) => stop.status === "current");
 
   return (
-    <div className={cn("overflow-x-auto pb-2", className)}>
-      <div className="relative mx-2" style={{ minWidth: "760px", height: "168px" }}>
-        {/* Base line */}
-        <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-outline-variant/50" />
-        {/* Traveled portion */}
-        <div
-          className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-rail-blue"
-          style={{ width: `${trainLeftPct}%` }}
-        />
-
-        {/* Live train marker */}
-        <div
-          className="live-pulse absolute top-1/2 z-10 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-rail-blue text-white shadow-md"
-          style={{ left: `${trainLeftPct}%` }}
-          aria-hidden="true"
-        >
-          <TrainFront size={16} />
-        </div>
+    <div className={cn("max-h-[420px] overflow-y-auto scrollbar-thin", className)}>
+      <div className="relative pl-2">
+        {/* Continuous connecting line, behind every row's dot. */}
+        <div className="absolute bottom-3 left-[19px] top-3 w-0.5 bg-outline-variant/50" aria-hidden="true" />
+        {currentIndex > 0 && (
+          <div
+            className="absolute left-[19px] top-3 w-0.5 bg-rail-blue"
+            style={{ height: `${(currentIndex / (stops.length - 1)) * 100}%` }}
+            aria-hidden="true"
+          />
+        )}
 
         {stops.map((stop, index) => {
-          const leftPct = (stop.distanceFromOriginKm / totalDistance) * 100;
-          const labelAbove = index % 2 === 0;
-
+          const isCurrent = stop.status === "current";
           return (
-            <div key={stop.stationCode}>
-              <div
-                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
-                style={{ left: `${leftPct}%` }}
-              >
-                <div className={cn("h-3.5 w-3.5 rounded-full", STOP_DOT_CLASS[stop.status])} />
+            <div key={`${stop.stationCode}-${stop.distanceFromOriginKm}`} className="relative flex items-start gap-3 py-2.5">
+              <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center">
+                {isCurrent ? (
+                  <div className="live-pulse flex h-7 w-7 items-center justify-center rounded-full bg-rail-blue text-white shadow-md">
+                    <TrainFront size={14} />
+                  </div>
+                ) : (
+                  <div className={cn("h-3.5 w-3.5 rounded-full", STOP_DOT_CLASS[stop.status])} />
+                )}
               </div>
 
               <div
                 className={cn(
-                  "absolute flex w-28 -translate-x-1/2 flex-col items-center gap-0.5 text-center",
-                  labelAbove ? "-translate-y-full" : "",
+                  "flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 rounded-md px-2 py-1",
+                  isCurrent && "bg-rail-blue/5",
                 )}
-                style={{
-                  left: `${leftPct}%`,
-                  top: labelAbove ? "calc(50% - 20px)" : "calc(50% + 20px)",
-                }}
               >
-                <span className="text-body-sm font-semibold leading-tight text-on-background">
-                  {stop.stationName}
-                </span>
-                <span className="font-body text-data-mono leading-tight text-on-surface-variant">
-                  {stop.predictedTime}
-                </span>
-                {stop.status !== "passed" && stop.delayMinutes !== 0 && (
-                  <span className="text-[10px] font-semibold leading-tight text-rail-amber">
-                    {formatDelay(stop.delayMinutes)}
+                <div className="flex min-w-0 flex-col">
+                  <span
+                    className={cn(
+                      "truncate text-body-sm font-semibold",
+                      stop.status === "passed" ? "text-on-surface-variant" : "text-on-background",
+                    )}
+                  >
+                    {stop.stationName}
                   </span>
-                )}
-                {stop.status === "current" && (
-                  <span className="text-[10px] font-bold uppercase leading-tight tracking-wide text-rail-blue">
-                    Live
+                  <span className="font-body text-data-mono text-[10px] text-on-surface-variant">
+                    {stop.stationCode} · {stop.distanceFromOriginKm} km
+                    {index === 0 && " · Origin"}
+                    {index === stops.length - 1 && " · Destination"}
                   </span>
-                )}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="font-body text-data-mono text-body-sm text-on-surface-variant">
+                    {stop.predictedTime}
+                  </span>
+                  {stop.delayMinutes !== 0 && (
+                    <span className="text-[11px] font-semibold text-rail-amber">{formatDelay(stop.delayMinutes)}</span>
+                  )}
+                  {isCurrent && (
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-rail-blue">Live</span>
+                  )}
+                </div>
               </div>
             </div>
           );

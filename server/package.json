@@ -1,0 +1,11 @@
+{
+  "name": "railcast-server",
+  "version": "1.0.0",
+  "description": "RailCast backend — pure Node.js, no external dependencies",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  }
+}

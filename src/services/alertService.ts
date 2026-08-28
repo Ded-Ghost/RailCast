@@ -1,17 +1,14 @@
 import type { AlertItem, DataSourceStatus, DelayStatus } from "@/types";
-import { alerts } from "@/data";
 import { parseTimeToMinutes } from "@/lib/timeMath";
-import { resolveAfter } from "./mockDelay";
 
 /**
  * Real state-transition-driven alert generation — `evaluate()` compares a
  * train's previous and current state and returns whatever new alerts that
  * change actually warrants. No alert here is hardcoded; each is only
  * produced when the underlying numbers genuinely crossed a threshold.
- * `listAlerts`/`listCriticalAlerts` below still serve the static seed
- * list (data/alerts.ts) — that's the network-wide alert history a real
- * backend would own; `evaluate` is what a live feed would call on every
- * update to append to it.
+ * Called from two places: hooks/useNetworkAlertWatcher (network-wide, every
+ * currently-tracked train) and store/useSimulationStore (the one train being
+ * actively simulated on Train Details, tick-by-tick).
  */
 
 const DELAY_SEVERITY_RANK: Record<DelayStatus, number> = {
@@ -62,14 +59,6 @@ function makeAlert(partial: Omit<AlertItem, "id" | "timestamp" | "read">): Alert
 }
 
 export const alertService = {
-  async listAlerts(): Promise<AlertItem[]> {
-    return resolveAfter(alerts);
-  },
-
-  async listCriticalAlerts(): Promise<AlertItem[]> {
-    return resolveAfter(alerts.filter((alert) => alert.category === "critical"));
-  },
-
   /**
    * Compares one train's previous and current state and returns any new
    * alerts that transition genuinely warrants — never more than one alert

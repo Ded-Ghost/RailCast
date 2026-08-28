@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Gauge, MapPin, X } from "lucide-react";
 import type { Train } from "@/types";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { formatDelay } from "@/lib/format";
+import { formatDelay, formatClockTime, formatSpeed } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export interface TrainInfoPanelProps {
   train: Train;
@@ -18,6 +19,8 @@ export interface TrainInfoPanelProps {
  * live on Train Details, which this links out to.
  */
 export function TrainInfoPanel({ train, onClose, className }: TrainInfoPanelProps) {
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const timeFormat = useSettingsStore((s) => s.timeFormat);
   return (
     <div className={cn("flex flex-col gap-4 p-4", className)}>
       <div className="flex items-start justify-between gap-2">
@@ -47,7 +50,10 @@ export function TrainInfoPanel({ train, onClose, className }: TrainInfoPanelProp
 
       <div className="grid grid-cols-2 gap-3">
         <Stat label="Delay" value={<StatusBadge status={train.delayStatus} label={formatDelay(train.delayMinutes)} />} />
-        <Stat label="Predicted ETA" value={<span className="font-body text-data-mono">{train.predictedEta}</span>} />
+        <Stat
+          label="Predicted ETA"
+          value={<span className="font-body text-data-mono">{formatClockTime(train.predictedEta, timeFormat)}</span>}
+        />
         <Stat
           label="Current Location"
           value={
@@ -62,7 +68,7 @@ export function TrainInfoPanel({ train, onClose, className }: TrainInfoPanelProp
           value={
             <span className="flex items-center gap-1">
               <Gauge size={12} className="text-on-surface-variant" />
-              {train.currentSpeedKmh} km/h
+              {formatSpeed(train.currentSpeedKmh, speedUnit)}
             </span>
           }
         />

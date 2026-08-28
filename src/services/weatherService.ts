@@ -1,17 +1,18 @@
 import type { GeoPoint, WeatherCondition, WeatherSnapshot } from "@/types";
 
 /**
- * This is the ONE service in the app that makes a genuine live network
- * call — everything else under services/ reads from src/data mock
- * fixtures. Open-Meteo requires no API key and is free for non-commercial
- * use (CC BY 4.0) — see https://open-meteo.com. If RailCast becomes a
- * commercial product, Open-Meteo's terms would need revisiting, or a
- * switch to a licensed provider like OpenWeatherMap.
+ * The one service in the app that calls a live provider directly from the
+ * browser rather than through the RailCast backend. Open-Meteo requires no
+ * API key and is free for non-commercial use (CC BY 4.0) — see
+ * https://open-meteo.com. If RailCast becomes a commercial product,
+ * Open-Meteo's terms would need revisiting, or a switch to a licensed
+ * provider like OpenWeatherMap.
  *
- * Deliberately called directly from the client: Open-Meteo needs no
- * secret to protect (no API key at all), unlike the RailRadar live-train
- * integration in liveTrainService.ts, which does carry a secret and must
- * go through a backend proxy.
+ * Safe to call directly from the client specifically because Open-Meteo
+ * needs no secret to protect. A provider that did carry an API key would
+ * need to go through the backend instead, the same way every train-data
+ * call already does (see trainService.ts) — never embed a secret in a
+ * VITE_-prefixed variable, since those ship inside the browser bundle.
  */
 
 const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";

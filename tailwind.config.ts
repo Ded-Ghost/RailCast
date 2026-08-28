@@ -9,65 +9,70 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Every token below resolves through a CSS custom property (see
+        // index.css's `:root` / `.dark` blocks) instead of a fixed hex value.
+        // Flipping the `dark` class on <html> re-themes the whole app — every
+        // component already builds its classes from these token names, so
+        // none of them need touching for dark mode to work.
         // Surfaces
-        background: "#f9f9f9",
-        "on-background": "#1a1c1c",
-        surface: "#f9f9f9",
-        "surface-dim": "#dadada",
-        "surface-bright": "#f9f9f9",
-        "surface-container-lowest": "#ffffff",
-        "surface-container-low": "#f3f3f4",
-        "surface-container": "#eeeeee",
-        "surface-container-high": "#e8e8e8",
-        "surface-container-highest": "#e2e2e2",
-        "surface-variant": "#e2e2e2",
-        "on-surface": "#1a1c1c",
-        "on-surface-variant": "#434654",
-        "inverse-surface": "#2f3131",
-        "inverse-on-surface": "#f0f1f1",
-        outline: "#737685",
-        "outline-variant": "#c3c6d6",
-        "surface-tint": "#0c56d0",
+        background: "rgb(var(--color-background) / <alpha-value>)",
+        "on-background": "rgb(var(--color-on-background) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        "surface-dim": "rgb(var(--color-surface-dim) / <alpha-value>)",
+        "surface-bright": "rgb(var(--color-surface-bright) / <alpha-value>)",
+        "surface-container-lowest": "rgb(var(--color-surface-container-lowest) / <alpha-value>)",
+        "surface-container-low": "rgb(var(--color-surface-container-low) / <alpha-value>)",
+        "surface-container": "rgb(var(--color-surface-container) / <alpha-value>)",
+        "surface-container-high": "rgb(var(--color-surface-container-high) / <alpha-value>)",
+        "surface-container-highest": "rgb(var(--color-surface-container-highest) / <alpha-value>)",
+        "surface-variant": "rgb(var(--color-surface-variant) / <alpha-value>)",
+        "on-surface": "rgb(var(--color-on-surface) / <alpha-value>)",
+        "on-surface-variant": "rgb(var(--color-on-surface-variant) / <alpha-value>)",
+        "inverse-surface": "rgb(var(--color-inverse-surface) / <alpha-value>)",
+        "inverse-on-surface": "rgb(var(--color-inverse-on-surface) / <alpha-value>)",
+        outline: "rgb(var(--color-outline) / <alpha-value>)",
+        "outline-variant": "rgb(var(--color-outline-variant) / <alpha-value>)",
+        "surface-tint": "rgb(var(--color-surface-tint) / <alpha-value>)",
 
         // Brand / Railway Blue
-        primary: "#003d9b",
-        "on-primary": "#ffffff",
-        "primary-container": "#0052cc",
-        "on-primary-container": "#c4d2ff",
-        "inverse-primary": "#b2c5ff",
-        "primary-fixed": "#dae2ff",
-        "primary-fixed-dim": "#b2c5ff",
-        "on-primary-fixed": "#001848",
-        "on-primary-fixed-variant": "#0040a2",
+        primary: "rgb(var(--color-primary) / <alpha-value>)",
+        "on-primary": "rgb(var(--color-on-primary) / <alpha-value>)",
+        "primary-container": "rgb(var(--color-primary-container) / <alpha-value>)",
+        "on-primary-container": "rgb(var(--color-on-primary-container) / <alpha-value>)",
+        "inverse-primary": "rgb(var(--color-inverse-primary) / <alpha-value>)",
+        "primary-fixed": "rgb(var(--color-primary-fixed) / <alpha-value>)",
+        "primary-fixed-dim": "rgb(var(--color-primary-fixed-dim) / <alpha-value>)",
+        "on-primary-fixed": "rgb(var(--color-on-primary-fixed) / <alpha-value>)",
+        "on-primary-fixed-variant": "rgb(var(--color-on-primary-fixed-variant) / <alpha-value>)",
 
-        secondary: "#4c5e83",
-        "on-secondary": "#ffffff",
-        "secondary-container": "#bfd2fd",
-        "on-secondary-container": "#475a7e",
-        "secondary-fixed": "#d7e2ff",
-        "secondary-fixed-dim": "#b4c7f1",
-        "on-secondary-fixed": "#041b3c",
-        "on-secondary-fixed-variant": "#34476a",
+        secondary: "rgb(var(--color-secondary) / <alpha-value>)",
+        "on-secondary": "rgb(var(--color-on-secondary) / <alpha-value>)",
+        "secondary-container": "rgb(var(--color-secondary-container) / <alpha-value>)",
+        "on-secondary-container": "rgb(var(--color-on-secondary-container) / <alpha-value>)",
+        "secondary-fixed": "rgb(var(--color-secondary-fixed) / <alpha-value>)",
+        "secondary-fixed-dim": "rgb(var(--color-secondary-fixed-dim) / <alpha-value>)",
+        "on-secondary-fixed": "rgb(var(--color-on-secondary-fixed) / <alpha-value>)",
+        "on-secondary-fixed-variant": "rgb(var(--color-on-secondary-fixed-variant) / <alpha-value>)",
 
-        tertiary: "#414446",
-        "on-tertiary": "#ffffff",
-        "tertiary-container": "#595b5d",
-        "on-tertiary-container": "#d2d3d5",
-        "tertiary-fixed": "#e1e2e4",
-        "tertiary-fixed-dim": "#c5c6c8",
-        "on-tertiary-fixed": "#191c1e",
-        "on-tertiary-fixed-variant": "#444749",
+        tertiary: "rgb(var(--color-tertiary) / <alpha-value>)",
+        "on-tertiary": "rgb(var(--color-on-tertiary) / <alpha-value>)",
+        "tertiary-container": "rgb(var(--color-tertiary-container) / <alpha-value>)",
+        "on-tertiary-container": "rgb(var(--color-on-tertiary-container) / <alpha-value>)",
+        "tertiary-fixed": "rgb(var(--color-tertiary-fixed) / <alpha-value>)",
+        "tertiary-fixed-dim": "rgb(var(--color-tertiary-fixed-dim) / <alpha-value>)",
+        "on-tertiary-fixed": "rgb(var(--color-on-tertiary-fixed) / <alpha-value>)",
+        "on-tertiary-fixed-variant": "rgb(var(--color-on-tertiary-fixed-variant) / <alpha-value>)",
 
-        error: "#ba1a1a",
-        "on-error": "#ffffff",
-        "error-container": "#ffdad6",
-        "on-error-container": "#93000a",
+        error: "rgb(var(--color-error) / <alpha-value>)",
+        "on-error": "rgb(var(--color-on-error) / <alpha-value>)",
+        "error-container": "rgb(var(--color-error-container) / <alpha-value>)",
+        "on-error-container": "rgb(var(--color-on-error-container) / <alpha-value>)",
 
         // Operational status system (semantic, rigid — see DESIGN.md)
-        "rail-green": "#0b8a00", // On Time
-        "rail-amber": "#d68800", // Minor delay
-        "rail-orange": "#c2540a", // Significant delay
-        "rail-blue": "#0052cc", // Live / predictive
+        "rail-green": "rgb(var(--color-rail-green) / <alpha-value>)", // On Time
+        "rail-amber": "rgb(var(--color-rail-amber) / <alpha-value>)", // Minor delay
+        "rail-orange": "rgb(var(--color-rail-orange) / <alpha-value>)", // Significant delay
+        "rail-blue": "rgb(var(--color-rail-blue) / <alpha-value>)", // Live / predictive
       },
       borderRadius: {
         DEFAULT: "0.25rem", // 4px — inputs & buttons

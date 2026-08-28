@@ -5,11 +5,12 @@ import { Card, CardHeader } from "@/components/common/Card";
 import { DataSourceBadge } from "@/components/common/LiveIndicator";
 import { EmptyState } from "@/components/common/EmptyState";
 import { CardSkeleton } from "@/components/common/Skeleton";
-import { NetworkMap } from "@/components/map/NetworkMap";
+import { RealNetworkMap } from "@/components/map/RealNetworkMap";
 import { TrainInfoPanel } from "@/components/train/TrainInfoPanel";
 import { TrainStatusRow } from "@/components/train/TrainStatusRow";
 import { useTrains } from "@/hooks/useTrains";
-import { useStations } from "@/hooks/useStations";
+import { useAnimatedTrains } from "@/hooks/useAnimatedTrains";
+import { useStations, useAllStations } from "@/hooks/useStations";
 import { useNetworkStore } from "@/store/useNetworkStore";
 
 /**
@@ -19,19 +20,30 @@ import { useNetworkStore } from "@/store/useNetworkStore";
  * out to Train Details.
  */
 export default function LiveNetwork() {
-  const { data: trains, isLoading } = useTrains();
-  const { data: stations } = useStations();
+  const { data: trains, isLoading, error } = useTrains();
+  const { data: majorStations } = useStations();
+  const { data: allStations } = useAllStations();
   const selectedTrainId = useNetworkStore((state) => state.selectedTrainId);
   const selectTrain = useNetworkStore((state) => state.selectTrain);
 
-  const selectedTrain = (trains ?? []).find((train) => train.id === selectedTrainId) ?? null;
+  // Markers move every 5 seconds by interpolating between the real stops of
+  // each train's real route, instead of sitting on a station until the next
+  // 30-second poll. Re-seeded from the backend on every poll.
+  const animatedTrains = useAnimatedTrains(trains ?? []);
+
+  const selectedTrain = animatedTrains.find((train) => train.id === selectedTrainId) ?? null;
 
   return (
     <PageContainer>
       <PageHeader
         title="Live Network"
-        description="Positions and delay states across the network — one train runs a scripted demo simulation; the rest are static reference data."
-        action={<DataSourceBadge status="demo" detail="Only train 12345 updates" />}
+        description="Live positions and delay states — click any train for its full running status."
+        action={
+          <DataSourceBadge
+            status={error ? "offline" : "live"}
+            detail={error ?? "Positions interpolated between real stops, resynced every 30s"}
+          />
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:items-start">
@@ -42,9 +54,10 @@ export default function LiveNetwork() {
               <CardSkeleton rows={6} />
             </div>
           ) : (
-            <NetworkMap
-              trains={trains ?? []}
-              stations={stations ?? []}
+            <RealNetworkMap
+              trains={animatedTrains}
+              majorStations={majorStations ?? []}
+              allStations={allStations ?? []}
               selectedTrainId={selectedTrainId}
               onSelectTrain={selectTrain}
               className="min-h-[520px] flex-1 lg:min-h-[640px]"
@@ -75,7 +88,7 @@ export default function LiveNetwork() {
             <div className="p-4">
               <CardSkeleton rows={4} />
             </div>
-          ) : trains && trains.length > 0 ? (
+          ) : animatedTrains.length > 0 ? (
             <div className="max-h-[600px] overflow-y-auto scrollbar-thin">
               <table className="w-full border-collapse text-left">
                 <thead>
@@ -86,7 +99,7 @@ export default function LiveNetwork() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/20 font-body text-data-mono">
-                  {trains.map((train) => (
+                  {animatedTrains.map((train) => (
                     <TrainStatusRow key={train.id} train={train} />
                   ))}
                 </tbody>

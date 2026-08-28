@@ -1,4 +1,4 @@
-import type { DelayStatus } from "./common";
+import type { DelayStatus, GeoPoint } from "./common";
 
 export interface RouteSection {
   id: string;
@@ -28,6 +28,39 @@ export interface RouteStopProgress {
   predictedTime: string;
   delayMinutes: number;
   status: RouteStopStatus;
+
+  // ── Live route extensions ───────────────────────────────────────────────────
+  // Populated by /api/trains/:id/route. Optional so any consumer built against
+  // the original six fields keeps compiling and working.
+
+  /** Station name as published in the timetable — saves a lookup against the station table. */
+  stationName?: string;
+
+  /**
+   * Real coordinates for this stop, straight from the published route.
+   *
+   * This is what lets the simulation interpolate a position for *any* train:
+   * a static station table can only geocode stations it happens to contain,
+   * whereas every stop on a live route arrives already carrying its own
+   * position. Consumers should prefer this over a code lookup.
+   */
+  position?: GeoPoint;
+
+  /** Booked arrival at this stop, "HH:MM" — null at the origin. */
+  scheduledArrival?: string | null;
+  /** Booked departure from this stop, "HH:MM" — null at the destination. */
+  scheduledDeparture?: string | null;
+  /** Time the train actually called here, "HH:MM", when the feed reported it. */
+  actualTime?: string | null;
+  /** The live feed's own wording for this stop's delay, e.g. "13min". */
+  delayText?: string | null;
+
+  platform?: string | null;
+  /** Booked halt at this stop, minutes. */
+  haltMinutes?: number;
+  /** Days after departure that this stop falls on; 0 for day one. */
+  dayOffset?: number;
+  zone?: string | null;
 }
 
 /** Per-train station-by-station ETA breakdown — powers the Train Details route intelligence visualization. */

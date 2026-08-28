@@ -10,15 +10,22 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { useAccuracyMetrics, usePredictionVsActual, useRankedFactors } from "@/hooks/usePredictionInsights";
 import { useTrain } from "@/hooks/useTrains";
 import { usePrediction } from "@/hooks/useTrainIntelligence";
-import { PRIMARY_DEMO_TRAIN_ID } from "@/data";
-import { formatDelay } from "@/lib/format";
+import { useNetworkStore } from "@/store/useNetworkStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { formatDelay, formatClockTime } from "@/lib/format";
 
 export default function Predictions() {
+  // Use the selected train from network store, or default to first train
+  const selectedTrainId = useNetworkStore((state) => state.selectedTrainId);
+  const trains = useNetworkStore((state) => state.trains);
+  const trainId = selectedTrainId || trains[0]?.id || "12301";
+
   const { data: accuracy, isLoading: isLoadingAccuracy } = useAccuracyMetrics();
   const { data: series, isLoading: isLoadingSeries } = usePredictionVsActual();
   const { data: factors, isLoading: isLoadingFactors } = useRankedFactors();
-  const { data: train } = useTrain(PRIMARY_DEMO_TRAIN_ID);
-  const { data: prediction } = usePrediction(PRIMARY_DEMO_TRAIN_ID);
+  const { data: train } = useTrain(trainId);
+  const { data: prediction } = usePrediction(trainId);
+  const timeFormat = useSettingsStore((s) => s.timeFormat);
 
   const maxImpact = factors ? Math.max(...factors.map((factor) => factor.impactScore), 1) : 1;
 
@@ -135,9 +142,12 @@ export default function Predictions() {
                 {train.destinationName}
               </div>
               <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-                <PredictionStat label="Current ETA" value={prediction.predictedEta} big />
+                <PredictionStat label="Current ETA" value={formatClockTime(prediction.predictedEta, timeFormat)} big />
                 <PredictionStat label="Confidence" value={`${prediction.confidence}%`} />
-                <PredictionStat label="Prediction Range" value={`${prediction.rangeStart}–${prediction.rangeEnd}`} />
+                <PredictionStat
+                  label="Prediction Range"
+                  value={`${formatClockTime(prediction.rangeStart, timeFormat)}–${formatClockTime(prediction.rangeEnd, timeFormat)}`}
+                />
                 <PredictionStat label="Predicted Final Delay" value={formatDelay(train.delayMinutes)} />
               </div>
             </div>

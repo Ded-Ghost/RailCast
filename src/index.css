@@ -2,6 +2,131 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Theme tokens as CSS custom properties (RGB triplets, consumed by
+ * tailwind.config.ts via `rgb(var(--color-x) / <alpha-value>)`). Every
+ * component builds its classes from the token names below, so switching
+ * `.dark` on <html> re-themes the entire app without touching a single
+ * component file. See src/lib/theme.ts for how the class gets applied.
+ */
+:root {
+  --color-background: 249 249 249;
+  --color-on-background: 26 28 28;
+  --color-surface: 249 249 249;
+  --color-surface-dim: 218 218 218;
+  --color-surface-bright: 249 249 249;
+  --color-surface-container-lowest: 255 255 255;
+  --color-surface-container-low: 243 243 244;
+  --color-surface-container: 238 238 238;
+  --color-surface-container-high: 232 232 232;
+  --color-surface-container-highest: 226 226 226;
+  --color-surface-variant: 226 226 226;
+  --color-on-surface: 26 28 28;
+  --color-on-surface-variant: 67 70 84;
+  --color-inverse-surface: 47 49 49;
+  --color-inverse-on-surface: 240 241 241;
+  --color-outline: 115 118 133;
+  --color-outline-variant: 195 198 214;
+  --color-surface-tint: 12 86 208;
+
+  --color-primary: 0 61 155;
+  --color-on-primary: 255 255 255;
+  --color-primary-container: 0 82 204;
+  --color-on-primary-container: 196 210 255;
+  --color-inverse-primary: 178 197 255;
+  --color-primary-fixed: 218 226 255;
+  --color-primary-fixed-dim: 178 197 255;
+  --color-on-primary-fixed: 0 24 72;
+  --color-on-primary-fixed-variant: 0 64 162;
+
+  --color-secondary: 76 94 131;
+  --color-on-secondary: 255 255 255;
+  --color-secondary-container: 191 210 253;
+  --color-on-secondary-container: 71 90 126;
+  --color-secondary-fixed: 215 226 255;
+  --color-secondary-fixed-dim: 180 199 241;
+  --color-on-secondary-fixed: 4 27 60;
+  --color-on-secondary-fixed-variant: 52 71 106;
+
+  --color-tertiary: 65 68 70;
+  --color-on-tertiary: 255 255 255;
+  --color-tertiary-container: 89 91 93;
+  --color-on-tertiary-container: 210 211 213;
+  --color-tertiary-fixed: 225 226 228;
+  --color-tertiary-fixed-dim: 197 198 200;
+  --color-on-tertiary-fixed: 25 28 30;
+  --color-on-tertiary-fixed-variant: 68 71 73;
+
+  --color-error: 186 26 26;
+  --color-on-error: 255 255 255;
+  --color-error-container: 255 218 214;
+  --color-on-error-container: 147 0 10;
+
+  --color-rail-green: 11 138 0;
+  --color-rail-amber: 214 136 0;
+  --color-rail-orange: 194 84 10;
+  --color-rail-blue: 0 82 204;
+}
+
+.dark {
+  --color-background: 15 16 17;
+  --color-on-background: 226 227 229;
+  --color-surface: 15 16 17;
+  --color-surface-dim: 15 16 17;
+  --color-surface-bright: 58 60 62;
+  --color-surface-container-lowest: 10 11 12;
+  --color-surface-container-low: 24 26 28;
+  --color-surface-container: 30 32 34;
+  --color-surface-container-high: 40 42 45;
+  --color-surface-container-highest: 51 53 56;
+  --color-surface-variant: 68 71 84;
+  --color-on-surface: 226 227 229;
+  --color-on-surface-variant: 195 198 214;
+  --color-inverse-surface: 226 227 229;
+  --color-inverse-on-surface: 26 28 28;
+  --color-outline: 141 145 158;
+  --color-outline-variant: 67 70 84;
+  --color-surface-tint: 178 197 255;
+
+  --color-primary: 178 197 255;
+  --color-on-primary: 0 40 108;
+  --color-primary-container: 0 64 162;
+  --color-on-primary-container: 218 226 255;
+  --color-inverse-primary: 0 61 155;
+  --color-primary-fixed: 218 226 255;
+  --color-primary-fixed-dim: 178 197 255;
+  --color-on-primary-fixed: 0 24 72;
+  --color-on-primary-fixed-variant: 0 64 162;
+
+  --color-secondary: 199 209 241;
+  --color-on-secondary: 30 42 66;
+  --color-secondary-container: 52 71 106;
+  --color-on-secondary-container: 215 226 255;
+  --color-secondary-fixed: 215 226 255;
+  --color-secondary-fixed-dim: 180 199 241;
+  --color-on-secondary-fixed: 4 27 60;
+  --color-on-secondary-fixed-variant: 52 71 106;
+
+  --color-tertiary: 197 198 200;
+  --color-on-tertiary: 45 48 49;
+  --color-tertiary-container: 68 71 73;
+  --color-on-tertiary-container: 225 226 228;
+  --color-tertiary-fixed: 225 226 228;
+  --color-tertiary-fixed-dim: 197 198 200;
+  --color-on-tertiary-fixed: 25 28 30;
+  --color-on-tertiary-fixed-variant: 68 71 73;
+
+  --color-error: 255 180 171;
+  --color-on-error: 105 0 5;
+  --color-error-container: 147 0 10;
+  --color-on-error-container: 255 218 214;
+
+  --color-rail-green: 96 213 79;
+  --color-rail-amber: 255 183 77;
+  --color-rail-orange: 255 138 80;
+  --color-rail-blue: 130 177 255;
+}
+
 @layer base {
   html,
   body,
@@ -9,8 +134,18 @@
     height: 100%;
   }
 
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
     font-family: "Inter", sans-serif;
+    background-color: rgb(var(--color-background));
+    transition: background-color 0.15s ease;
   }
 
   h1,
@@ -31,11 +166,11 @@
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #dadada;
+    background: rgb(var(--color-outline-variant));
     border-radius: 4px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: #c5c6c8;
+    background: rgb(var(--color-outline));
   }
 }
 
@@ -88,3 +223,12 @@
   display: inline-block;
   animation: eta-flash 0.7s ease-out;
 }
+
+/* Leaflet's tile providers only ship light-themed imagery. Inverting just
+   the tile pane (not the marker/overlay/popup panes, which sit in their own
+   stacking layers) keeps every real train/station marker at its normal
+   status color while the base map itself matches dark mode. */
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
+

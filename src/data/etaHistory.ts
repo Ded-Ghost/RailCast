@@ -8,21 +8,11 @@ export interface EtaHistoryPoint {
 }
 
 /**
- * How a train's predicted arrival has drifted over the last few model
- * refreshes. Powers the single chart allowed on Train Details ("ETA
- * Evolution"). Only the primary demo train has history recorded today.
+ * A train's ETA drift is observed, never canned.
+ *
+ * The upstream feeds publish a snapshot of right now, not a time series, so
+ * there is no history to import — the series behind Train Details' "ETA
+ * Evolution" chart is accumulated by the simulation store as it watches
+ * successive live resyncs (see store/useSimulationStore.ts). This module
+ * therefore contributes only the point shape.
  */
-export const etaHistoryByTrain: Record<string, EtaHistoryPoint[]> = {
-  "12345": [
-    { time: "12:00", predictedEta: "14:32", delayMinutes: 2 },
-    { time: "12:30", predictedEta: "14:35", delayMinutes: 5 },
-    { time: "13:00", predictedEta: "14:33", delayMinutes: 3 },
-    { time: "13:30", predictedEta: "14:38", delayMinutes: 8 },
-    { time: "14:00", predictedEta: "14:40", delayMinutes: 10 },
-    { time: "14:15", predictedEta: "14:41", delayMinutes: 11 },
-  ],
-};
-
-export function getEtaHistoryForTrain(trainId: string): EtaHistoryPoint[] {
-  return etaHistoryByTrain[trainId] ?? [];
-}

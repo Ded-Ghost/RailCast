@@ -6,4 +6,3 @@ export * from "./prediction";
 export * from "./alert";
 export * from "./simulation";
 export * from "./weather";
-export * from "./liveTrain";

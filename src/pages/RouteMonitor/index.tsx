@@ -1,5 +1,6 @@
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Gauge, MapPin, Route as RouteIcon, TrendingUp } from "lucide-react";
+import { Gauge, MapPin, Route as RouteIcon, Search, TrendingUp } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader } from "@/components/common/Card";
@@ -7,61 +8,144 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { SectionStatusBadge } from "@/components/common/SectionStatusBadge";
 import { EmptyState } from "@/components/common/EmptyState";
 import { CardSkeleton } from "@/components/common/Skeleton";
-import { MapContainer, RouteOverlay, StationMarker, TrainMarker } from "@/components/map";
-import { useCorridorStations, useRailwaySections } from "@/hooks/useRouteMonitor";
+import { MapContainer, RiskPointMarker, RouteOverlay, StationMarker, TrainMarker } from "@/components/map";
 import { useTrain } from "@/hooks/useTrains";
-import { findCurrentSection } from "@/services/routeService";
-import { PRIMARY_DEMO_TRAIN_ID } from "@/data";
-import { formatDelay } from "@/lib/format";
-
-const CORRIDOR_MAP_CENTER = { lat: 23.7, lng: 82.5 };
-const CORRIDOR_MAP_ZOOM = 5;
+import { useRouteProgress } from "@/hooks/useTrainIntelligence";
+import { computeRealRouteSections, findCurrentSection } from "@/services/routeService";
+import { getOperationalRiskFactors } from "@/data/operationalRiskFactors";
+import { computeBoundsView } from "@/lib/geo";
+import { useNetworkStore } from "@/store/useNetworkStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { formatDelay, formatSpeed } from "@/lib/format";
+import type { Station } from "@/types";
 
 export default function RouteMonitor() {
-  const { data: stations, isLoading: isLoadingStations } = useCorridorStations();
-  const { data: sections, isLoading: isLoadingSections } = useRailwaySections();
-  const { data: train } = useTrain(PRIMARY_DEMO_TRAIN_ID);
+  const selectedTrainId = useNetworkStore((state) => state.selectedTrainId);
+  const trains = useNetworkStore((state) => state.trains);
+  const selectTrain = useNetworkStore((state) => state.selectTrain);
+  const [activeTrainId, setActiveTrainId] = useState(selectedTrainId || trains[0]?.id || "12301");
+  const [trainInput, setTrainInput] = useState(activeTrainId);
 
-  const currentSection = train && sections ? findCurrentSection(train, sections) : undefined;
-  const isLoading = isLoadingStations || isLoadingSections;
+  // Whatever train is selected elsewhere in the app (e.g. opened on Train
+  // Details) becomes this page's active train automatically — the map no
+  // longer stays pinned to a preset default once the user has looked at
+  // something else.
+  useEffect(() => {
+    if (selectedTrainId && selectedTrainId !== activeTrainId) {
+      setActiveTrainId(selectedTrainId);
+      setTrainInput(selectedTrainId);
+    }
+    // Only react to the selection changing elsewhere, not to this page's own edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTrainId]);
+
+  const { data: train, isLoading: isLoadingTrain } = useTrain(activeTrainId);
+  const { data: routeProgress, isLoading: isLoadingRoute } = useRouteProgress(activeTrainId);
+  const isLoading = isLoadingTrain || isLoadingRoute;
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+
+  const stops = routeProgress?.stops ?? [];
+
+  // Real per-leg section health, computed from THIS train's own real route
+  // and its own real observed delays — see routeService.ts for exactly what
+  // "current speed" and "congestion" mean here and where the numbers come
+  // from on a leg that hasn't happened yet.
+  const sections = useMemo(() => computeRealRouteSections(train, stops), [train, stops]);
+  const currentSection = train && sections.length > 0 ? findCurrentSection(train, sections) : undefined;
+
+  const routeStations: Station[] = useMemo(
+    () =>
+      stops
+        .filter((stop) => stop.position)
+        .map((stop) => ({
+          code: stop.stationCode,
+          name: stop.stationName ?? stop.stationCode,
+          position: stop.position!,
+          zone: stop.zone ?? undefined,
+        })),
+    [stops],
+  );
+
+  const mapView = useMemo(() => computeBoundsView(routeStations.map((station) => station.position)), [routeStations]);
+
+  // Known, real bottlenecks still ahead on this route — surfaced as markers
+  // right on the map, not just listed in text. See data/operationalRiskFactors.ts.
+  const riskFactors = useMemo(() => getOperationalRiskFactors(stops), [stops]);
+  const riskPositions = riskFactors
+    .map((factor) => ({ factor, position: stops.find((stop) => stop.stationCode === factor.stationCode)?.position }))
+    .filter((entry): entry is { factor: (typeof riskFactors)[number]; position: NonNullable<typeof entry.position> } =>
+      Boolean(entry.position),
+    );
+
+  function handleLoad(event: FormEvent) {
+    event.preventDefault();
+    const id = trainInput.trim();
+    if (/^\d{4,5}$/.test(id)) {
+      setActiveTrainId(id);
+      selectTrain(id);
+    }
+  }
 
   return (
     <PageContainer>
       <PageHeader
         title="Route Monitor"
-        description="Section-by-section health, congestion, and speed compliance along a route."
+        description="Section-by-section health, congestion, and speed compliance for any real train's real route."
       />
 
-      {/* Route selector — one route modeled today; the control is built to hold more. */}
       <Card>
-        <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-          <label htmlFor="route-select" className="text-body-sm font-semibold text-on-surface-variant">
-            Route
-          </label>
-          <select
-            id="route-select"
-            className="h-9 rounded border border-outline-variant bg-surface-container-lowest px-3 text-body-md text-on-surface focus:border-primary focus:outline-none"
-            defaultValue="bbs-ndls"
-          >
-            <option value="bbs-ndls">Bhubaneswar → New Delhi</option>
-          </select>
-          {train && <StatusBadge status={train.delayStatus} className="ml-auto" />}
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <form onSubmit={handleLoad} className="flex items-center gap-2">
+            <label htmlFor="route-train-input" className="text-body-sm font-semibold text-on-surface-variant">
+              Train
+            </label>
+            <div className="relative">
+              <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+              <input
+                id="route-train-input"
+                type="text"
+                inputMode="numeric"
+                value={trainInput}
+                onChange={(event) => setTrainInput(event.target.value)}
+                placeholder="e.g. 12301"
+                className="h-9 w-36 rounded border border-outline-variant bg-surface-container-lowest pl-7 pr-3 font-body text-data-mono text-body-md text-on-surface focus:border-primary focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="h-9 rounded bg-primary px-3 text-body-sm font-semibold text-on-primary transition-colors hover:bg-primary-container"
+            >
+              Load
+            </button>
+          </form>
+          {train && (
+            <span className="text-body-sm text-on-surface-variant">
+              {train.id} · {train.name} · {train.originName} → {train.destinationName}
+            </span>
+          )}
+          {train && <StatusBadge status={train.delayStatus} className="sm:ml-auto" />}
         </CardContent>
       </Card>
 
       <Card className="flex flex-col">
-        <CardHeader title="Bhubaneswar → New Delhi" action={<span className="text-body-sm text-on-surface-variant">Real map — OpenStreetMap</span>} />
+        <CardHeader
+          title={train ? `${train.originName} → ${train.destinationName}` : "Route"}
+          action={<span className="text-body-sm text-on-surface-variant">Real map — OpenStreetMap</span>}
+        />
         {isLoading ? (
           <div className="p-4">
             <CardSkeleton rows={6} />
           </div>
-        ) : !stations || stations.length === 0 ? (
-          <EmptyState icon={RouteIcon} title="Route data unavailable" description="No stations found for this route." />
+        ) : routeStations.length === 0 ? (
+          <EmptyState icon={RouteIcon} title="Route data unavailable" description="Enter a valid train number above to load its route." />
         ) : (
-          <MapContainer center={CORRIDOR_MAP_CENTER} zoom={CORRIDOR_MAP_ZOOM} className="min-h-[440px] flex-1 lg:min-h-[520px]">
-            <RouteOverlay stations={stations} sections={sections ?? undefined} />
-            {stations.map((station) => (
+          <MapContainer center={mapView.center} zoom={mapView.zoom} className="min-h-[440px] flex-1 lg:min-h-[520px]">
+            <RouteOverlay stations={routeStations} sections={sections} />
+            {routeStations.map((station) => (
               <StationMarker key={station.code} station={station} />
+            ))}
+            {riskPositions.map(({ factor, position }) => (
+              <RiskPointMarker key={`${factor.kind}-${factor.stationCode}`} factor={factor} position={position} />
             ))}
             {train && <TrainMarker train={train} selected pulse />}
           </MapContainer>
@@ -71,14 +155,14 @@ export default function RouteMonitor() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:items-start">
         <Card className="xl:col-span-2">
           <CardHeader title="Section Timeline" />
-          {isLoadingSections ? (
+          {isLoading ? (
             <div className="p-4">
               <CardSkeleton rows={5} />
             </div>
-          ) : !sections || sections.length === 0 ? (
+          ) : sections.length === 0 ? (
             <EmptyState title="No sections available" />
           ) : (
-            <div className="flex flex-col divide-y divide-outline-variant/20">
+            <div className="flex max-h-[420px] flex-col divide-y divide-outline-variant/20 overflow-y-auto scrollbar-thin">
               {sections.map((section) => {
                 const isCurrent = currentSection?.id === section.id;
                 return (
@@ -96,7 +180,12 @@ export default function RouteMonitor() {
                         )}
                       </span>
                       <span className="text-body-sm text-on-surface-variant">
-                        {section.distanceKm} km · Avg speed {section.currentSpeedKmh} km/h
+                        {section.distanceKm} km · {formatSpeed(section.currentSpeedKmh, speedUnit)}
+                        {section.delayContributionMinutes !== 0 && (
+                          <span className="ml-1.5 text-rail-amber">
+                            ({formatDelay(section.delayContributionMinutes)})
+                          </span>
+                        )}
                       </span>
                     </div>
                     <SectionStatusBadge status={section.congestionStatus} />
@@ -114,7 +203,7 @@ export default function RouteMonitor() {
               <EmptyState
                 icon={MapPin}
                 title="No section detected"
-                description="The live train isn't positioned within a modeled section right now."
+                description="The train isn't positioned within a modeled leg right now."
               />
             ) : (
               <div className="flex flex-col gap-4">
@@ -124,8 +213,8 @@ export default function RouteMonitor() {
                   </span>
                   <SectionStatusBadge status={currentSection.congestionStatus} />
                 </div>
-                <DetailRow icon={Gauge} label="Current Speed" value={`${currentSection.currentSpeedKmh} km/h`} />
-                <DetailRow icon={TrendingUp} label="Permitted / Reference Speed" value={`${currentSection.referenceSpeedKmh} km/h`} />
+                <DetailRow icon={Gauge} label="Current Speed" value={formatSpeed(currentSection.currentSpeedKmh, speedUnit)} />
+                <DetailRow icon={TrendingUp} label="Booked Pace" value={formatSpeed(currentSection.referenceSpeedKmh, speedUnit)} />
                 <DetailRow
                   icon={RouteIcon}
                   label="Delay Contribution"
@@ -140,25 +229,25 @@ export default function RouteMonitor() {
       <Card>
         <CardHeader title="Speed Compliance by Section" />
         <CardContent>
-          {!sections || sections.length === 0 ? (
+          {sections.length === 0 ? (
             <EmptyState title="No section data available" />
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart
                 data={sections.map((section) => ({
                   name: `${section.startStationCode}–${section.endStationCode}`,
-                  Reference: section.referenceSpeedKmh,
-                  Current: section.currentSpeedKmh,
+                  Booked: section.referenceSpeedKmh,
+                  Actual: section.currentSpeedKmh,
                 }))}
                 margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e2" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#737685" }} stroke="#c3c6d6" />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#737685" }} stroke="#c3c6d6" interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 11, fill: "#737685" }} stroke="#c3c6d6" width={36} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="Reference" fill="#c3c6d6" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Current" fill="#0052cc" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Booked" fill="#c3c6d6" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Actual" fill="#0052cc" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

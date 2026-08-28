@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
-import { Clock, Gauge, Target, TriangleAlert } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Clock, Gauge, Radio, TriangleAlert } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader } from "@/components/common/Card";
@@ -8,28 +8,34 @@ import { MetricCard } from "@/components/common/MetricCard";
 import { CardSkeleton, MetricCardSkeleton } from "@/components/common/Skeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { MapContainer, HeatmapOverlay, StationMarker } from "@/components/map";
-import {
-  useDelayCauseBreakdown,
-  useDelayIntelligenceSummary,
-  useDelayTrend,
-  useWorstPerformingSections,
-} from "@/hooks/useDelayIntelligence";
-import { useCorridorStations, useRailwaySections } from "@/hooks/useRouteMonitor";
+import { DataSourceBadge } from "@/components/common/LiveIndicator";
+import { MapContainer, NetworkHeatOverlay, StationMarker } from "@/components/map";
+import { useTrains } from "@/hooks/useTrains";
+import { useStations } from "@/hooks/useStations";
+import { useNetworkStore } from "@/store/useNetworkStore";
+import { computeBoundsView } from "@/lib/geo";
 import { formatDelay } from "@/lib/format";
-
-const CORRIDOR_MAP_CENTER = { lat: 23.7, lng: 82.5 };
-const CORRIDOR_MAP_ZOOM = 5;
+import { computeRealDelaySummary, computeRealDelayCauses, computeBusiestDelayPoints } from "@/services/networkAnalytics";
 
 export default function DelayIntelligence() {
-  const { data: summary, isLoading: isLoadingSummary } = useDelayIntelligenceSummary();
-  const { data: causes, isLoading: isLoadingCauses } = useDelayCauseBreakdown();
-  const { data: trend, isLoading: isLoadingTrend } = useDelayTrend();
-  const { data: worstSections, isLoading: isLoadingWorst } = useWorstPerformingSections();
-  const { data: stations } = useCorridorStations();
-  const { data: sections } = useRailwaySections();
+  const { data: liveTrains, error: trainsError } = useTrains();
+  const { data: majorStations } = useStations();
+  const delayTrendHistory = useNetworkStore((s) => s.delayTrendHistory);
   const [focusedSectionId, setFocusedSectionId] = useState<string | null>(null);
   const heatmapCardRef = useRef<HTMLDivElement>(null);
+
+  const trains = liveTrains ?? [];
+  const isLoadingSummary = liveTrains === null;
+  const summary = useMemo(() => computeRealDelaySummary(trains, delayTrendHistory), [trains, delayTrendHistory]);
+  const causes = useMemo(() => computeRealDelayCauses(trains), [trains]);
+  const worstSections = useMemo(() => computeBusiestDelayPoints(trains), [trains]);
+
+  // Framed once over the major stations — a stable, network-wide view. The
+  // heat circles move as trains do; the view itself does not chase them.
+  const mapView = useMemo(
+    () => computeBoundsView((majorStations ?? []).map((station) => station.position), { padding: 1.15, minZoom: 4, maxZoom: 6 }),
+    [majorStations],
+  );
 
   function focusSection(sectionId: string) {
     setFocusedSectionId(sectionId);
@@ -40,11 +46,22 @@ export default function DelayIntelligence() {
     <PageContainer>
       <PageHeader
         title="Delay Intelligence"
-        description="Real-time analytics and historical delay trends across the network."
+        description="Real-time analytics computed from the trains RailCast is currently tracking."
       />
 
+      {!isLoadingSummary && (
+        <p className="-mt-2 flex items-center gap-1.5 text-body-sm text-on-surface-variant">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rail-green opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-rail-green" />
+          </span>
+          Actively tracking all {summary.trackedTrains} browse-list trains — every KPI below is computed from them,
+          not just the ones with a fresh reading right now.
+        </p>
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoadingSummary || !summary ? (
+        {isLoadingSummary ? (
           <>
             <MetricCardSkeleton />
             <MetricCardSkeleton />
@@ -56,28 +73,40 @@ export default function DelayIntelligence() {
             <MetricCard
               label="Average Delay"
               value={`${summary.averageDelayMinutes} min`}
-              delta={`+${summary.averageDelayDeltaFromYesterday} min from yesterday`}
-              deltaTone="negative"
+              delta={
+                summary.averageDelayTrendDeltaMinutes === null
+                  ? "Accumulating this session"
+                  : `${summary.averageDelayTrendDeltaMinutes >= 0 ? "+" : ""}${summary.averageDelayTrendDeltaMinutes} min vs earlier this session`
+              }
+              deltaTone={
+                summary.averageDelayTrendDeltaMinutes === null || summary.averageDelayTrendDeltaMinutes === 0
+                  ? "neutral"
+                  : summary.averageDelayTrendDeltaMinutes > 0
+                    ? "negative"
+                    : "positive"
+              }
               icon={Clock}
             />
             <MetricCard
               label="Maximum Delay"
               value={`${summary.maxDelayMinutes} min`}
-              delta={`Train ${summary.maxDelayTrainId} (${summary.maxDelaySection})`}
+              delta={summary.maxDelayTrainId ? `Train ${summary.maxDelayTrainId} near ${summary.maxDelayLocation}` : "—"}
               deltaTone="neutral"
               icon={TriangleAlert}
             />
             <MetricCard
-              label="Recovery Rate"
-              value={`${summary.recoveryRatePerSector} min/sector`}
-              delta="Improving steadily"
-              deltaTone="positive"
-              icon={Gauge}
+              label="Fresh Live Readings"
+              value={`${summary.liveCoveragePercent}%`}
+              delta={`${summary.trackedTrains} trains tracked — rest are showing a last-known reading`}
+              deltaTone={summary.liveCoveragePercent >= 70 ? "positive" : "neutral"}
+              icon={Radio}
             />
             <MetricCard
-              label="Prediction Accuracy"
-              value={`${summary.predictionAccuracyPercent}%`}
-              icon={Target}
+              label="Currently Delayed"
+              value={`${summary.delayedCount}`}
+              delta={`${summary.delayedPercent}% of tracked trains`}
+              deltaTone={summary.delayedPercent > 40 ? "negative" : "neutral"}
+              icon={Gauge}
             />
           </>
         )}
@@ -85,39 +114,51 @@ export default function DelayIntelligence() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:items-start">
         <Card className="xl:col-span-2">
-          <CardHeader title="Delay Trend Over Time" />
+          <CardHeader
+            title="Network Average Delay — This Session"
+            action={
+              delayTrendHistory.length > 0 && (
+                <span className="text-[11px] text-on-surface-variant/80">
+                  {delayTrendHistory.length} sample{delayTrendHistory.length === 1 ? "" : "s"} · last at{" "}
+                  {delayTrendHistory[delayTrendHistory.length - 1].time}
+                </span>
+              )
+            }
+          />
+          <p className="px-4 pb-1 pt-3 text-[11px] leading-snug text-on-surface-variant/80">
+            One real sample per poll, starting from when this page's watcher began running — there's no historical
+            network-wide series to draw on, so this builds up live rather than showing an invented full-day curve.
+            A near-flat line is real too: it means the network genuinely hasn't shifted much yet this session.
+          </p>
           <CardContent>
-            {isLoadingTrend || !trend ? (
-              <CardSkeleton rows={4} />
+            {delayTrendHistory.length < 2 ? (
+              <EmptyState
+                icon={Clock}
+                title="Collecting live samples…"
+                description="The trend line appears once a couple of polls have landed — check back in a minute."
+              />
             ) : (
               <ResponsiveContainer width="100%" height={240}>
-                <LineChart data={trend} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                <LineChart data={delayTrendHistory} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e2" vertical={false} />
-                  <XAxis dataKey="time" tick={{ fontSize: 11, fill: "#737685" }} stroke="#c3c6d6" />
+                  <XAxis dataKey="time" tick={{ fontSize: 11, fill: "#737685" }} stroke="#c3c6d6" minTickGap={30} />
                   <YAxis
                     tick={{ fontSize: 11, fill: "#737685" }}
                     stroke="#c3c6d6"
-                    width={36}
+                    width={40}
+                    domain={[(min: number) => Math.max(0, Math.floor(min - 1)), (max: number) => Math.ceil(max + 1)]}
+                    allowDecimals={false}
                     tickFormatter={(value: number) => `${value}m`}
                   />
-                  <Tooltip formatter={(value: number) => [`${value} min`, undefined]} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Tooltip formatter={(value: number) => [`${Number(value).toFixed(1)} min`, "Network avg delay"]} />
                   <Line
                     type="monotone"
-                    dataKey="actualDelayMinutes"
-                    name="Actual"
+                    dataKey="avgDelayMinutes"
+                    name="Network avg delay"
                     stroke="#0052cc"
                     strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="predictedDelayMinutes"
-                    name="Predicted"
-                    stroke="#c3c6d6"
-                    strokeWidth={2}
-                    strokeDasharray="4 4"
-                    dot={false}
+                    dot={{ r: 2 }}
+                    isAnimationActive={false}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -127,8 +168,11 @@ export default function DelayIntelligence() {
 
         <Card className="xl:col-span-1">
           <CardHeader title="Delay Causes" />
+          <p className="px-4 pb-1 pt-3 text-[11px] leading-snug text-on-surface-variant/80">
+            Real, checkable buckets only — never a specific weather/technical split no data source here can actually attribute.
+          </p>
           <CardContent>
-            {isLoadingCauses || !causes ? (
+            {causes.length === 0 ? (
               <CardSkeleton rows={4} />
             ) : (
               <div className="flex flex-col gap-4">
@@ -152,21 +196,39 @@ export default function DelayIntelligence() {
       <Card ref={heatmapCardRef} className={`flex flex-col transition-shadow ${focusedSectionId ? "ring-2 ring-primary ring-offset-2" : ""}`}>
         <CardHeader
           title="Railway Delay Heatmap"
-          action={<span className="text-body-sm text-on-surface-variant">Live Data</span>}
+          action={
+            <DataSourceBadge
+              status={trainsError ? "offline" : "live"}
+              detail={trainsError ?? `${liveTrains?.length ?? 0} currently-tracked trains`}
+            />
+          }
         />
-        {!stations || !sections ? (
+        <p className="px-4 pb-1 pt-3 text-[11px] leading-snug text-on-surface-variant/80">
+          One circle per currently-tracked train, centered on its real live position and sized/colored by its
+          real delay — not a synthetic gradient. Scoped to the trains RailCast is watching right now, the same
+          set behind the Dashboard's "Known Trains" count. Overlapping circles near a junction read as a hotter
+          area on their own, from real density, not a drawn-on gradient.
+        </p>
+        <div className="flex flex-wrap items-center gap-3 px-4 pb-2 text-[11px] text-on-surface-variant">
+          <LegendDot colorClass="bg-rail-green" label="On Time" />
+          <LegendDot colorClass="bg-rail-amber" label="Minor" />
+          <LegendDot colorClass="bg-rail-orange" label="Significant" />
+          <LegendDot colorClass="bg-error" label="Severe" />
+          <span className="text-on-surface-variant/70">— circle size scales with delay</span>
+        </div>
+        {!majorStations || !liveTrains ? (
           <div className="p-4">
             <CardSkeleton rows={5} />
           </div>
         ) : (
           <MapContainer
-            center={CORRIDOR_MAP_CENTER}
-            zoom={CORRIDOR_MAP_ZOOM}
+            center={mapView.center}
+            zoom={mapView.zoom}
             className="min-h-[380px] flex-1 lg:min-h-[440px]"
             showTypeControl={false}
           >
-            <HeatmapOverlay stations={stations} sections={sections} />
-            {stations.map((station) => (
+            <NetworkHeatOverlay trains={liveTrains} />
+            {majorStations.map((station) => (
               <StationMarker key={station.code} station={station} />
             ))}
           </MapContainer>
@@ -174,22 +236,22 @@ export default function DelayIntelligence() {
       </Card>
 
       <Card>
-        <CardHeader title="Worst Performing Sections" />
-        {isLoadingWorst ? (
-          <div className="p-4">
-            <CardSkeleton rows={4} />
-          </div>
-        ) : !worstSections || worstSections.length === 0 ? (
-          <EmptyState title="No section data available" />
+        <CardHeader title="Busiest Delay Points Right Now" />
+        <p className="px-4 pb-1 pt-3 text-[11px] leading-snug text-on-surface-variant/80">
+          Currently-tracked delayed trains grouped by where they are right now, ranked by average delay — not a
+          fixed named corridor (RailCast has no historical per-section punctuality log to rank those against).
+        </p>
+        {worstSections.length === 0 ? (
+          <EmptyState title="No delayed trains right now" description="Every currently-tracked train is on time." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-outline-variant/30 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  <th className="px-4 py-2">Section</th>
+                  <th className="px-4 py-2">Location</th>
                   <th className="px-4 py-2 text-right">Avg Delay</th>
-                  <th className="px-4 py-2 text-right">Affected Trains</th>
-                  <th className="px-4 py-2 text-right">Current Status</th>
+                  <th className="px-4 py-2 text-right">Trains Here</th>
+                  <th className="px-4 py-2 text-right">Worst Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20">
@@ -215,5 +277,14 @@ export default function DelayIntelligence() {
         )}
       </Card>
     </PageContainer>
+  );
+}
+
+function LegendDot({ colorClass, label }: { colorClass: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1">
+      <span className={`h-2 w-2 rounded-full ${colorClass}`} />
+      {label}
+    </span>
   );
 }
