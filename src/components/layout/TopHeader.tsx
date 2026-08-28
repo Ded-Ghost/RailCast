@@ -126,11 +126,11 @@ export function TopHeader({ breadcrumb }: TopHeaderProps) {
               <p className="mt-1.5 text-on-surface-variant">
                 Live train positions and ETAs join two public feeds: erail.in for published timetables and rappid.in
                 for running status. Delay predictions layer momentum, live weather and known structural bottlenecks
-                on top of that — see Train Details' prediction breakdown for the factors behind any one train.
+                on top of that. See Train Details' prediction breakdown for the factors behind any one train.
               </p>
               <div className="mt-3 flex items-center gap-1.5 border-t border-outline-variant/40 pt-3 text-on-surface-variant">
                 <Radio size={14} />
-                <span>A live feed can go quiet without erroring — a stale-clock icon next to a delay means it's a last-known reading, not a fresh one.</span>
+                <span>A live feed can go quiet without erroring. A stale-clock icon next to a delay means it's a last-known reading, not a fresh one.</span>
               </div>
               <Link
                 to="/settings"
@@ -168,7 +168,7 @@ export function TopHeader({ breadcrumb }: TopHeaderProps) {
                 </div>
               </div>
               <p className="mt-3 border-t border-outline-variant/40 pt-3 text-on-surface-variant">
-                RailCast runs without an account system — every visitor sees the same live network view. Display
+                RailCast runs without an account system. Every visitor sees the same live network view. Display
                 preferences (theme, units, alerts) are saved to this browser via Settings.
               </p>
               <Link

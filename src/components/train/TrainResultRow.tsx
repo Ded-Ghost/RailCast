@@ -57,7 +57,7 @@ export function TrainResultRow({ train }: TrainResultRowProps) {
         <span className="flex items-center gap-1.5">
           <StatusBadge status={train.delayStatus} label={formatDelay(train.delayMinutes)} />
           {train.liveFeedStale && (
-            <span title="Live feed hasn't rechecked this train recently — reading may be outdated">
+            <span title="Live feed hasn't rechecked this train recently, reading may be outdated">
               <Clock size={13} className="text-on-surface-variant/70" aria-hidden="true" />
             </span>
           )}

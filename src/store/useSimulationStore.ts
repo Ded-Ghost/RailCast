@@ -204,7 +204,7 @@ export const useSimulationStore = create<SimulationStoreState>((set, get) => ({
       if (get().activeTrainId !== activeTrainId) return;
 
       if (!freshTrain) {
-        set({ isSyncing: false, syncError: "Live status unavailable — continuing from the last known position." });
+        set({ isSyncing: false, syncError: "Live status unavailable. Continuing from the last known position." });
         return;
       }
 
@@ -227,7 +227,7 @@ export const useSimulationStore = create<SimulationStoreState>((set, get) => ({
       // last good fix, which is exactly what it is for.
       set({
         isSyncing: false,
-        syncError: "Could not reach the live feed — showing simulated position.",
+        syncError: "Could not reach the live feed. Showing simulated position.",
       });
     }
   },

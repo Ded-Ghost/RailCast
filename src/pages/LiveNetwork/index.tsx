@@ -37,7 +37,7 @@ export default function LiveNetwork() {
     <PageContainer>
       <PageHeader
         title="Live Network"
-        description="Live positions and delay states — click any train for its full running status."
+        description="Live positions and delay states. Click any train for its full running status."
         action={
           <DataSourceBadge
             status={error ? "offline" : "live"}

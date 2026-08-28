@@ -189,7 +189,7 @@ export default function TrainDetails() {
     ? `Live feed is stale · last updated ${formatAge(dataAgeSeconds)} ago by us, longer upstream`
     : isLive
       ? `Live feed · synced ${formatAge(dataAgeSeconds)} ago`
-      : "Live running status unavailable — timetable only";
+      : "Live running status unavailable, timetable only";
 
   // The banner fires when the running-status feed did not contribute, when it
   // did but hasn't actually rechecked this train in a while, or when the last
@@ -203,7 +203,7 @@ export default function TrainDetails() {
       : dataSource === "schedule"
         ? "The live running-status feed is unavailable. Times below come from the published timetable, not from today's actual running."
         : train.liveFeedStale
-          ? "The live running-status source hasn't rechecked this train recently — the delay and station below are its last known reading, not confirmed current. A flat \"on time\" here often just means no fresher data exists yet."
+          ? "The live running-status source hasn't rechecked this train recently. The delay and station below are its last known reading, not confirmed current. A flat \"on time\" here often just means no fresher data exists yet."
           : syncError;
 
   const statusVisual = getStatusVisual(train.delayStatus);
@@ -334,7 +334,7 @@ export default function TrainDetails() {
               <CardHeader title="Why This ETA?" />
               <CardContent className="flex flex-col gap-3">
                 <p className="text-[11px] leading-snug text-on-surface-variant/80">
-                  A heuristic projection, not a validated model — see each factor's basis below. RailCast
+                  A heuristic projection, not a validated model. See each factor's basis below. RailCast
                   has no historical ground truth to backtest against, so this cannot honestly claim a
                   specific accuracy figure.
                 </p>
@@ -510,7 +510,7 @@ export default function TrainDetails() {
               <CardHeader title="Known Operational Risk Points" />
               <CardContent className="flex flex-col gap-3">
                 <p className="text-[11px] leading-snug text-on-surface-variant/80">
-                  Known, real chokepoints and seasonal effects this route passes through — not a
+                  Known, real chokepoints and seasonal effects this route passes through, not a
                   statistical average for this train. RailCast has no source for per-train
                   historical delay logs; these are documented facts about the network itself.
                 </p>
@@ -567,7 +567,7 @@ export default function TrainDetails() {
               ) : (
                 <EmptyState
                   title="Building history"
-                  description="The upstream feeds publish a snapshot, not a time series — this chart fills in as the page observes successive updates."
+                  description="The upstream feeds publish a snapshot, not a time series. This chart fills in as the page observes successive updates."
                 />
               )}
             </CardContent>

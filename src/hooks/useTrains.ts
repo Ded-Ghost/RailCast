@@ -62,7 +62,7 @@ function usePolledResource<T>(
       if (isEmpty(result)) {
         // Keep whatever is on screen; an empty response is usually the backend
         // being unreachable, not the network genuinely having no trains.
-        setError(hasData.current ? "Live refresh failed — showing the last known data." : "No live train data available.");
+        setError(hasData.current ? "Live refresh failed. Showing the last known data." : "No live train data available.");
       } else {
         setData(result);
         hasData.current = true;
@@ -71,7 +71,7 @@ function usePolledResource<T>(
       }
     } catch {
       if (isMounted.current) {
-        setError(hasData.current ? "Live refresh failed — showing the last known data." : "Unable to load train data.");
+        setError(hasData.current ? "Live refresh failed. Showing the last known data." : "Unable to load train data.");
       }
     } finally {
       inFlight.current = false;

@@ -293,7 +293,7 @@ export default function Settings() {
           />
           <CardContent>
             {healthError ? (
-              <p className="text-body-sm text-error">Backend unreachable — start the RailCast server to see live status.</p>
+              <p className="text-body-sm text-error">Backend unreachable. Start the RailCast server to see live status.</p>
             ) : !health ? (
               <p className="text-body-sm text-on-surface-variant">Checking backend…</p>
             ) : (
@@ -303,7 +303,7 @@ export default function Settings() {
                     Backend
                   </span>
                   <span className="flex items-center gap-1.5 text-body-md font-semibold text-rail-green">
-                    <span className="h-2 w-2 rounded-full bg-rail-green" /> Online — v{health.version}
+                    <span className="h-2 w-2 rounded-full bg-rail-green" /> Online · v{health.version}
                   </span>
                   <span className="text-body-sm text-on-surface-variant">Up {Math.round(health.uptimeSeconds / 60)} min</span>
                 </div>

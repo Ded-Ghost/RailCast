@@ -103,7 +103,7 @@ const KNOWN_BOTTLENECKS: BottleneckDefinition[] = [
     guardsStationCode: "CSMT",
     title: "Thane approach to Mumbai CSMT",
     description:
-      "At Thane, long-distance trains merge onto the Central Line's suburban-shared tracks — one of the busiest commuter corridors in the world. Long-distance services are routinely held to let suburban services through.",
+      "At Thane, long-distance trains merge onto the Central Line's suburban-shared tracks, one of the busiest commuter corridors in the world. Long-distance services are routinely held to let suburban services through.",
     typicalHoldMinutesMin: 5,
     typicalHoldMinutesMax: 15,
   },
@@ -222,7 +222,7 @@ export function getOperationalRiskFactors(
         stationName: fogStop.stationName ?? fogStop.stationCode,
         title: "Winter fog risk on this route",
         description:
-          "This route runs through the Indo-Gangetic plain, which sees dense winter fog most years between December and February — historically the single biggest cause of severe, multi-hour delays on North Indian trunk routes, especially into Delhi.",
+          "This route runs through the Indo-Gangetic plain, which sees dense winter fog most years between December and February, historically the single biggest cause of severe, multi-hour delays on North Indian trunk routes, especially into Delhi.",
         typicalHoldMinutesMin: 15,
         typicalHoldMinutesMax: 120,
       });
@@ -238,7 +238,7 @@ export function getOperationalRiskFactors(
         stationName: monsoonStop.stationName ?? monsoonStop.stationCode,
         title: "Monsoon risk on this route",
         description:
-          "This route runs through the Konkan/Western Ghats coastal belt, where the June–September monsoon regularly brings speed restrictions and, in heavy years, washouts — a recurring source of delay on this stretch.",
+          "This route runs through the Konkan/Western Ghats coastal belt, where the June–September monsoon regularly brings speed restrictions and, in heavy years, washouts, a recurring source of delay on this stretch.",
         typicalHoldMinutesMin: 10,
         typicalHoldMinutesMax: 90,
       });

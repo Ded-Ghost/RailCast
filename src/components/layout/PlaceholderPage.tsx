@@ -24,7 +24,7 @@ export function PlaceholderPage({ title, description, icon = Construction }: Pla
         <EmptyState
           icon={icon}
           title="Module not yet implemented"
-          description="This section is scaffolded and routed — implementation lands in a later phase."
+          description="This section is scaffolded and routed. Implementation lands in a later phase."
         />
       </Card>
     </PageContainer>

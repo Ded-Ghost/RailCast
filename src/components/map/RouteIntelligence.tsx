@@ -42,10 +42,10 @@ export function RouteIntelligence({ stops, className }: RouteIntelligenceProps) 
     <div className={cn("max-h-[420px] overflow-y-auto scrollbar-thin", className)}>
       <div className="relative pl-2">
         {/* Continuous connecting line, behind every row's dot. */}
-        <div className="absolute bottom-3 left-[19px] top-3 w-0.5 bg-outline-variant/50" aria-hidden="true" />
+        <div className="absolute bottom-3 left-[23px] top-3 w-0.5 bg-outline-variant/50" aria-hidden="true" />
         {currentIndex > 0 && (
           <div
-            className="absolute left-[19px] top-3 w-0.5 bg-rail-blue"
+            className="absolute left-[23px] top-3 w-0.5 bg-rail-blue"
             style={{ height: `${(currentIndex / (stops.length - 1)) * 100}%` }}
             aria-hidden="true"
           />

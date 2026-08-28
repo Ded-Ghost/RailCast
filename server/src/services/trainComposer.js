@@ -63,15 +63,25 @@ const CLASS_SPEED_CEILING_KMH = {
  *
  * rappid.in does not always have a fresh reading for every train — for a
  * train it hasn't rescraped in a while, it keeps serving the last snapshot it
- * has, which can be over an hour old, and that snapshot often shows every
- * single stop as "On Time". That is not the same claim as "this train is
- * currently on time" — it is "the last time we checked, which was a while
- * ago, it was". Below this threshold the feed is treated as current; at or
- * above it, the composed train is marked live-cached (not "live") and the
- * status sentence says plainly how old the reading is, rather than quietly
- * presenting a possibly hour-old snapshot with full "LIVE" confidence.
+ * has, and that snapshot often shows every single stop as "On Time". That is
+ * not the same claim as "this train is currently on time" — it is "the last
+ * time we checked, which was a while ago, it was". Below this threshold the
+ * feed is treated as current; at or above it, the composed train is marked
+ * live-cached (not "live") and the status sentence says plainly how old the
+ * reading is, rather than quietly presenting a stale snapshot with full
+ * "LIVE" confidence.
+ *
+ * The number itself is set from what the feed actually does, not a guess:
+ * sampling every browse-list train's real `updated_time` shows a normal
+ * operating cluster from a few minutes up to ~90 minutes old (routine
+ * rescrape lag), then a sharp jump straight to 8-150+ HOURS old for trains
+ * the feed has effectively stopped tracking. A lower threshold (20 min was
+ * tried first) sits inside that normal cluster and flags nearly every train
+ * as stale, which is technically defensible but drowns out the signal that
+ * actually matters: a reading old enough that it is not routine feed lag but
+ * a train the feed has gone dark on.
  */
-const STALE_FEED_THRESHOLD_MINUTES = 20;
+const STALE_FEED_THRESHOLD_MINUTES = 90;
 
 /** How much of a leg is spent accelerating away from / braking into a stop. */
 const ACCELERATION_FRACTION = 0.12;

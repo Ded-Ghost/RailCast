@@ -55,7 +55,7 @@ export default function DelayIntelligence() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rail-green opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-rail-green" />
           </span>
-          Actively tracking all {summary.trackedTrains} browse-list trains — every KPI below is computed from them,
+          Actively tracking all {summary.trackedTrains} browse-list trains. Every KPI below is computed from them,
           not just the ones with a fresh reading right now.
         </p>
       )}
@@ -97,7 +97,7 @@ export default function DelayIntelligence() {
             <MetricCard
               label="Fresh Live Readings"
               value={`${summary.liveCoveragePercent}%`}
-              delta={`${summary.trackedTrains} trains tracked — rest are showing a last-known reading`}
+              delta={`${summary.trackedTrains} trains tracked, rest are showing a last-known reading`}
               deltaTone={summary.liveCoveragePercent >= 70 ? "positive" : "neutral"}
               icon={Radio}
             />
@@ -115,7 +115,7 @@ export default function DelayIntelligence() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:items-start">
         <Card className="xl:col-span-2">
           <CardHeader
-            title="Network Average Delay — This Session"
+            title="Network Average Delay · This Session"
             action={
               delayTrendHistory.length > 0 && (
                 <span className="text-[11px] text-on-surface-variant/80">
@@ -126,7 +126,7 @@ export default function DelayIntelligence() {
             }
           />
           <p className="px-4 pb-1 pt-3 text-[11px] leading-snug text-on-surface-variant/80">
-            One real sample per poll, starting from when this page's watcher began running — there's no historical
+            One real sample per poll, starting from when this page's watcher began running. There's no historical
             network-wide series to draw on, so this builds up live rather than showing an invented full-day curve.
             A near-flat line is real too: it means the network genuinely hasn't shifted much yet this session.
           </p>
@@ -135,7 +135,7 @@ export default function DelayIntelligence() {
               <EmptyState
                 icon={Clock}
                 title="Collecting live samples…"
-                description="The trend line appears once a couple of polls have landed — check back in a minute."
+                description="The trend line appears once a couple of polls have landed. Check back in a minute."
               />
             ) : (
               <ResponsiveContainer width="100%" height={240}>
@@ -169,7 +169,7 @@ export default function DelayIntelligence() {
         <Card className="xl:col-span-1">
           <CardHeader title="Delay Causes" />
           <p className="px-4 pb-1 pt-3 text-[11px] leading-snug text-on-surface-variant/80">
-            Real, checkable buckets only — never a specific weather/technical split no data source here can actually attribute.
+            Real, checkable buckets only, never a specific weather/technical split no data source here can actually attribute.
           </p>
           <CardContent>
             {causes.length === 0 ? (
@@ -204,17 +204,17 @@ export default function DelayIntelligence() {
           }
         />
         <p className="px-4 pb-1 pt-3 text-[11px] leading-snug text-on-surface-variant/80">
-          One circle per currently-tracked train, centered on its real live position and sized/colored by its
-          real delay — not a synthetic gradient. Scoped to the trains RailCast is watching right now, the same
-          set behind the Dashboard's "Known Trains" count. Overlapping circles near a junction read as a hotter
-          area on their own, from real density, not a drawn-on gradient.
+          <span className="font-semibold text-on-background">How to read it:</span> each circle is one tracked
+          train, positioned live. Bigger and redder means a longer delay. Where circles overlap, that's several
+          delayed trains clustered in the same area right now, not a drawn-on gradient. Same trains as Dashboard's
+          "Known Trains" count.
         </p>
         <div className="flex flex-wrap items-center gap-3 px-4 pb-2 text-[11px] text-on-surface-variant">
           <LegendDot colorClass="bg-rail-green" label="On Time" />
           <LegendDot colorClass="bg-rail-amber" label="Minor" />
           <LegendDot colorClass="bg-rail-orange" label="Significant" />
           <LegendDot colorClass="bg-error" label="Severe" />
-          <span className="text-on-surface-variant/70">— circle size scales with delay</span>
+          <span className="text-on-surface-variant/70">Circle size scales with delay</span>
         </div>
         {!majorStations || !liveTrains ? (
           <div className="p-4">
@@ -238,7 +238,7 @@ export default function DelayIntelligence() {
       <Card>
         <CardHeader title="Busiest Delay Points Right Now" />
         <p className="px-4 pb-1 pt-3 text-[11px] leading-snug text-on-surface-variant/80">
-          Currently-tracked delayed trains grouped by where they are right now, ranked by average delay — not a
+          Currently-tracked delayed trains grouped by where they are right now, ranked by average delay, not a
           fixed named corridor (RailCast has no historical per-section punctuality log to rank those against).
         </p>
         {worstSections.length === 0 ? (

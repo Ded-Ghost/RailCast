@@ -130,7 +130,7 @@ export default function RouteMonitor() {
       <Card className="flex flex-col">
         <CardHeader
           title={train ? `${train.originName} → ${train.destinationName}` : "Route"}
-          action={<span className="text-body-sm text-on-surface-variant">Real map — OpenStreetMap</span>}
+          action={<span className="text-body-sm text-on-surface-variant">Real map · OpenStreetMap</span>}
         />
         {isLoading ? (
           <div className="p-4">

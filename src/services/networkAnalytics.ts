@@ -109,7 +109,7 @@ export function computeRealDelayCauses(trains: Train[]): RealDelayCause[] {
   const buckets: { label: string; count: number }[] = [
     { label: "On Time", count: onTime },
     { label: "At Known Congestion Point", count: atKnownBottleneck },
-    { label: "Delayed — Unspecified", count: otherDelay },
+    { label: "Delayed (Unspecified)", count: otherDelay },
     { label: "Stale Reading (Unconfirmed)", count: staleReading },
   ];
 

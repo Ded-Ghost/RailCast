@@ -216,7 +216,7 @@ export default function SimulationLab() {
                 <option value="Fog">Fog</option>
               </select>
               <p className="mt-1 text-[11px] text-on-surface-variant/80">
-                This is a what-if input for the scenario, not a forecast — see real conditions below.
+                This is a what-if input for the scenario, not a forecast. See real conditions below.
               </p>
             </Field>
 
@@ -331,7 +331,7 @@ export default function SimulationLab() {
             {riskPositions.length > 0 && (
               <p className="border-t border-outline-variant/30 px-4 py-2 text-[11px] text-on-surface-variant">
                 <span className="font-semibold text-rail-amber">{riskPositions.length} known bottleneck{riskPositions.length === 1 ? "" : "s"}</span>{" "}
-                marked on the map (⚠) — tap one for details.
+                marked on the map (⚠), tap one for details.
               </p>
             )}
           </Card>

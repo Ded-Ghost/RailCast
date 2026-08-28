@@ -76,7 +76,7 @@ export default function Dashboard() {
     <PageContainer>
       <PageHeader
         title="Network Dashboard"
-        description="Live Indian Railways operational overview — published timetables joined to today's running status."
+        description="Live Indian Railways operational overview: published timetables joined to today's running status."
         action={
           <div className="flex flex-col items-end gap-1">
             <DataSourceBadge
@@ -102,7 +102,7 @@ export default function Dashboard() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Track any train — enter number (e.g. 12301) or name"
+            placeholder="Track any train: enter number (e.g. 12301) or name"
             className="h-11 w-full rounded-lg border border-outline-variant bg-surface-container-lowest pl-10 pr-4 text-body-md text-on-surface shadow-card placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
@@ -146,7 +146,7 @@ export default function Dashboard() {
       {staleCount > 0 && (
         <p className="-mt-2 text-body-sm text-on-surface-variant/80">
           {staleCount} of {totalTrains} train{staleCount === 1 ? "" : "s"} above {staleCount === 1 ? "has" : "have"} a
-          stale live reading (feed hasn't rechecked recently) — its "On Time" may just mean no fresher data exists yet.
+          stale live reading (feed hasn't rechecked recently). Its "On Time" may just mean no fresher data exists yet.
         </p>
       )}
 
